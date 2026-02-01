@@ -2,32 +2,31 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>ガラケーSMS - Realtime Edition</title>
+    <title>ガラケーSMS - Pro Mode</title>
     <style>
-        body { background: #1a1a1a; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: 'Hiragino Kaku Gothic ProN', sans-serif; }
-        .phone { width: 280px; background: #444; border-radius: 20px; padding: 15px; border: 3px solid #666; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
+        body { background: #1a1a1a; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: sans-serif; }
+        .phone { width: 300px; background: #333; border-radius: 30px; padding: 20px; border: 4px solid #555; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
         
         /* 画面 */
-        .screen { background: #9dae8d; height: 320px; border: 10px solid #111; padding: 5px; display: flex; flex-direction: column; color: #1a1a1a; }
+        .screen { background: #9dae8d; height: 260px; border: 8px solid #111; padding: 5px; display: flex; flex-direction: column; color: #1a1a1a; margin-bottom: 15px; }
         .status-bar { font-size: 11px; display: flex; justify-content: space-between; border-bottom: 1px solid #7a8a6d; padding-bottom: 2px; }
-        .clock { font-weight: bold; }
-        
-        .chat-log { flex: 1; font-size: 13px; overflow-y: auto; padding: 5px; background: rgba(0,0,0,0.05); }
-        .msg-sent { text-align: right; color: #003366; margin-bottom: 5px; }
-        .msg-received { text-align: left; color: #333; margin-bottom: 5px; font-weight: bold; }
+        .chat-log { flex: 1; font-size: 13px; overflow-y: auto; padding: 5px; }
+        .input-area { background: #fff; min-height: 40px; font-size: 16px; padding: 4px; border: 2px solid #555; color: #000; }
 
-        /* 入力エリア */
-        .input-area { background: #fff; min-height: 45px; font-size: 16px; padding: 4px; border: 2px solid #555; margin-top: 5px; color: #000; word-break: break-all; }
-        
-        /* キーパッド */
-        .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 15px; }
+        /* 十字キーセクション */
+        .navigation { display: grid; grid-template-areas: ". up ." "left ok right" ". down ."; justify-content: center; gap: 5px; margin-bottom: 15px; }
+        .nav-btn { width: 45px; height: 35px; background: #444; border: 1px solid #666; color: white; border-radius: 5px; cursor: pointer; }
+        .ok-btn { grid-area: ok; width: 50px; height: 50px; border-radius: 50%; background: radial-gradient(#666, #222); font-weight: bold; border: 2px solid #888; }
+
+        /* ダイヤルキー */
+        .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
         button { background: linear-gradient(#eee, #ccc); color: #333; border: 1px solid #999; padding: 10px 0; border-radius: 6px; cursor: pointer; border-bottom: 3px solid #888; }
         button:active { transform: translateY(2px); border-bottom: 1px solid #888; }
-        .key-num { font-size: 18px; font-weight: bold; display: block; line-height: 1; }
-        .key-label { font-size: 10px; display: block; margin-top: 2px; color: #666; }
+        .key-num { font-size: 16px; font-weight: bold; display: block; }
+        .key-label { font-size: 9px; display: block; color: #666; }
         
-        .del-icon { color: #d00; font-weight: bold; }
-        .send-btn { grid-column: span 3; background: linear-gradient(#5a5, #262); color: white; font-weight: bold; border-bottom: 3px solid #141; margin-top: 5px; height: 40px; }
+        .special-key { background: linear-gradient(#ddd, #bbb); }
+        .del-btn { color: #d00; }
     </style>
 </head>
 <body>
@@ -36,13 +35,19 @@
     <div class="screen">
         <div class="status-bar">
             <span>📶 圏内</span>
-            <span class="clock" id="clock">00:00:00</span>
+            <span id="clock">00:00</span>
             <span>🔋</span>
         </div>
-        <div class="chat-log" id="chatLog">
-            <div class="msg-received">受信：SMSセンターへようこそ</div>
-        </div>
+        <div class="chat-log" id="chatLog">受信箱</div>
         <div class="input-area" id="display"></div>
+    </div>
+
+    <div class="navigation">
+        <button class="nav-btn" style="grid-area: up">▲</button>
+        <button class="nav-btn" style="grid-area: left">◀</button>
+        <button class="ok-btn" onclick="sendMsg()">決定</button>
+        <button class="nav-btn" style="grid-area: right">▶</button>
+        <button class="nav-btn" style="grid-area: down">▼</button>
     </div>
 
     <div class="keypad">
@@ -55,33 +60,30 @@
         <button onclick="press('7')"><span class="key-num">7</span><span class="key-label">ま</span></button>
         <button onclick="press('8')"><span class="key-num">8</span><span class="key-label">や</span></button>
         <button onclick="press('9')"><span class="key-num">9</span><span class="key-label">ら</span></button>
-        <button onclick="press('*')"><span class="key-num">＊</span><span class="key-label">記号</span></button>
+        <button onclick="toggleSize()" class="special-key"><span class="key-num">＊</span><span class="key-label">大/小</span></button>
         <button onclick="press('0')"><span class="key-num">0</span><span class="key-label">わ</span></button>
-        <button onclick="clearInput()" class="del-icon">⌫</button>
-        <button class="send-btn" onclick="sendMsg()">メール送信</button>
+        <button onclick="clearInput()" class="special-key del-btn">⌫</button>
     </div>
 </div>
 
 <script>
-    // リアルタイム時計
     function updateClock() {
         const now = new Date();
-        const timeStr = now.getHours().toString().padStart(2, '0') + ":" + 
-                        now.getMinutes().toString().padStart(2, '0') + ":" + 
-                        now.getSeconds().toString().padStart(2, '0');
-        document.getElementById('clock').innerText = timeStr;
+        document.getElementById('clock').innerText = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
     }
-    setInterval(updateClock, 1000);
-    updateClock();
+    setInterval(updateClock, 1000); updateClock();
 
-    // 入力ロジック
     const mapping = {
         '1': ['あ', 'い', 'う', 'え', 'お'], '2': ['か', 'き', 'く', 'け', 'こ'],
         '3': ['さ', 'し', 'す', 'せ', 'そ'], '4': ['た', 'ち', 'つ', 'て', 'と'],
         '5': ['な', 'に', 'ぬ', 'ね', 'の'], '6': ['は', 'ひ', 'ふ', 'へ', 'ほ'],
-        '7': ['ま', 'み', 'む', 'め', 'も'], '8': ['や', 'ゆ', 'よ', '（', '）'],
-        '9': ['ら', 'り', 'る', 'れ', 'ろ'], '0': ['わ', 'を', 'ん', 'ー', '〜'],
-        '*': ['、', '。', '？', '！', '・']
+        '7': ['ま', 'み', 'む', 'め', 'も'], '8': ['や', 'ゆ', 'よ'],
+        '9': ['ら', 'り', 'る', 'れ', 'ろ'], '0': ['わ', 'を', 'ん', 'ー']
+    };
+
+    const smallChars = {
+        'あ': 'ぁ', 'い': 'ぃ', 'う': 'ぅ', 'え': 'ぇ', 'お': 'ぉ',
+        'つ': 'っ', 'や': 'ゃ', 'ゆ': 'ゅ', 'よ': 'ょ'
     };
 
     let lastKey = null;
@@ -103,43 +105,34 @@
         timer = setTimeout(() => { lastKey = null; }, 800);
     }
 
-    function updateDisplay() {
-        document.getElementById('display').innerText = currentText;
-    }
+    // 大書き・小書き切り替え機能
+    function toggleSize() {
+        if (currentText.length === 0) return;
+        const lastChar = currentText.slice(-1);
+        let newChar = lastChar;
 
-    function clearInput() {
-        if (currentText.length > 0) {
-            currentText = currentText.slice(0, -1);
-            updateDisplay();
+        // 小文字にするか、小文字を大文字に戻す
+        for (let key in smallChars) {
+            if (lastChar === key) { newChar = smallChars[key]; break; }
+            if (lastChar === smallChars[key]) { newChar = key; break; }
         }
+        
+        currentText = currentText.slice(0, -1) + newChar;
+        updateDisplay();
     }
 
-    // SMS送信・受信シミュレート
+    function updateDisplay() { document.getElementById('display').innerText = currentText; }
+    function clearInput() { if (currentText.length > 0) { currentText = currentText.slice(0, -1); updateDisplay(); } }
+
     function sendMsg() {
         if (!currentText) return;
         const log = document.getElementById('chatLog');
-        
-        // 送信
-        const sentDiv = document.createElement('div');
-        sentDiv.className = 'msg-sent';
-        sentDiv.innerText = "送信済：" + currentText;
-        log.appendChild(sentDiv);
-        
-        const tempMsg = currentText; // 応答用に保持
+        log.innerHTML += `<div style="text-align:right; color:#003366;">予：${currentText}</div>`;
         currentText = "";
         updateDisplay();
         log.scrollTop = log.scrollHeight;
-
-        // 1.5秒後に自動返信（SMS機能の再現）
-        setTimeout(() => {
-            const replyDiv = document.createElement('div');
-            replyDiv.className = 'msg-received';
-            replyDiv.innerText = "受信：「" + tempMsg + "」了解しました。";
-            log.appendChild(replyDiv);
-            log.scrollTop = log.scrollHeight;
-        }, 1500);
     }
 </script>
 
 </body>
-</html>
+</ht
