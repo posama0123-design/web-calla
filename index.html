@@ -2,22 +2,22 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>ガラケーSMS再現</title>
+    <title>ガラケーSMS - Minimal Mode</title>
     <style>
-        body { background: #333; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; }
-        /* ガラケー本体 */
-        .phone { width: 280px; background: #222; border-radius: 20px; padding: 20px; border: 4px solid #444; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-        /* 画面 */
-        .screen { background: #c5d0ba; height: 300px; border: 5px solid #111; padding: 10px; display: flex; flex-direction: column; overflow: hidden; position: relative; }
-        .status-bar { font-size: 12px; display: flex; justify-content: space-between; border-bottom: 1px solid #555; margin-bottom: 5px; }
-        .chat-log { flex: 1; font-size: 14px; overflow-y: auto; color: #111; }
-        .input-area { background: #fff; min-height: 20px; font-size: 14px; padding: 2px; border: 1px solid #888; margin-top: 5px; color: #000; }
+        body { background: #1a1a1a; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: 'Courier New', Courier, monospace; }
+        .phone { width: 260px; background: #333; border-radius: 15px; padding: 15px; border: 2px solid #555; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
+        .screen { background: #9dae8d; height: 280px; border: 8px solid #000; padding: 8px; display: flex; flex-direction: column; color: #1a1a1a; font-weight: bold; }
+        .status-bar { font-size: 10px; display: flex; justify-content: space-between; margin-bottom: 5px; border-bottom: 1px solid #7a8a6d; }
+        .chat-log { flex: 1; font-size: 13px; overflow-y: auto; }
+        .input-area { background: rgba(255,255,255,0.3); min-height: 40px; font-size: 16px; padding: 4px; border-top: 2px solid #000; }
         
-        /* キーパッド */
-        .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
-        button { background: #444; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-size: 12px; border-bottom: 3px solid #111; }
-        button:active { border-bottom: 1px solid #111; transform: translateY(2px); }
-        .send-btn { grid-column: span 3; background: #2a5d2a; margin-top: 5px; }
+        .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 15px; }
+        button { background: linear-gradient(#555, #222); color: #ddd; border: 1px solid #111; padding: 15px 5px; border-radius: 4px; cursor: pointer; font-size: 18px; position: relative; }
+        button:active { background: #111; transform: translateY(1px); }
+        
+        /* 削除アイコンボタンの調整 */
+        .del-icon { font-size: 14px; color: #ff6666; }
+        .send-btn { grid-column: span 3; background: #444; font-size: 14px; color: #fff; margin-top: 5px; }
     </style>
 </head>
 <body>
@@ -25,44 +25,39 @@
 <div class="phone">
     <div class="screen">
         <div class="status-bar">
-            <span>📶 圏内</span>
-            <span>12:34</span>
+            <span>MAX 📶</span>
+            <span>SMS</span>
             <span>🔋</span>
         </div>
-        <div class="chat-log" id="chatLog">受信箱 (0)</div>
+        <div class="chat-log" id="chatLog">受信箱</div>
         <div class="input-area" id="display"></div>
     </div>
 
     <div class="keypad">
-        <button onclick="press('1')">1<br>あいうえお</button>
-        <button onclick="press('2')">2<br>かきくけこ</button>
-        <button onclick="press('3')">3<br>さしすせそ</button>
-        <button onclick="press('4')">4<br>たちつてと</button>
-        <button onclick="press('5')">5<br>なにぬねの</button>
-        <button onclick="press('6')">6<br>はひふへほ</button>
-        <button onclick="press('7')">7<br>まみむめも</button>
-        <button onclick="press('8')">8<br>やゆよ</button>
-        <button onclick="press('9')">9<br>らりるれろ</button>
-        <button onclick="clearInput()">クリア</button>
-        <button onclick="press('0')">0<br>わをん</button>
-        <button onclick="press('#')">♯<br>記号</button>
-        <button class="send-btn" onclick="sendMsg()">送信 (メール完了)</button>
+        <button onclick="press('1')">1</button>
+        <button onclick="press('2')">2</button>
+        <button onclick="press('3')">3</button>
+        <button onclick="press('4')">4</button>
+        <button onclick="press('5')">5</button>
+        <button onclick="press('6')">6</button>
+        <button onclick="press('7')">7</button>
+        <button onclick="press('8')">8</button>
+        <button onclick="press('9')">9</button>
+        <button onclick="press('*')">＊</button>
+        <button onclick="press('0')">0</button>
+        <button onclick="clearInput()" class="del-icon">⌫</button>
+        <button class="send-btn" onclick="sendMsg()">送信</button>
     </div>
 </div>
 
 <script>
     const mapping = {
-        '1': ['あ', 'い', 'う', 'え', 'お'],
-        '2': ['か', 'き', 'く', 'け', 'こ'],
-        '3': ['さ', 'し', 'す', 'せ', 'そ'],
-        '4': ['た', 'ち', 'つ', 'て', 'と'],
-        '5': ['な', 'に', 'ぬ', 'ね', 'の'],
-        '6': ['は', 'ひ', 'ふ', 'へ', 'ほ'],
-        '7': ['ま', 'み', 'む', 'め', 'も'],
-        '8': ['や', 'ゆ', 'よ'],
-        '9': ['ら', 'り', 'る', 'れ', 'ろ'],
-        '0': ['わ', 'を', 'ん'],
-        '#': ['、', '。', '！', '？']
+        '1': ['あ', 'い', 'う', 'え', 'お'], '2': ['か', 'き', 'く', 'け', 'こ'],
+        '3': ['さ', 'し', 'す', 'せ', 'そ'], '4': ['た', 'ち', 'つ', 'て', 'と'],
+        '5': ['な', 'に', 'ぬ', 'ね', 'の'], '6': ['は', 'ひ', 'ふ', 'へ', 'ほ'],
+        '7': ['ま', 'み', 'む', 'め', 'も'], '8': ['や', 'ゆ', 'よ', '（', '）'],
+        '9': ['ら', 'り', 'る', 'れ', 'ろ'], '0': ['わ', 'を', 'ん', 'ー', '~'],
+        '*': ['、', '。', '？', '！', '・'],
     };
 
     let lastKey = null;
@@ -82,7 +77,7 @@
         updateDisplay();
         
         clearTimeout(timer);
-        timer = setTimeout(() => { lastKey = null; }, 1000); // 1秒経ったら次の文字へ
+        timer = setTimeout(() => { lastKey = null; }, 800); 
     }
 
     function updateDisplay() {
@@ -90,14 +85,20 @@
     }
 
     function clearInput() {
-        currentText = "";
-        updateDisplay();
+        if (currentText.length > 0) {
+            currentText = currentText.slice(0, -1);
+            updateDisplay();
+        }
     }
 
     function sendMsg() {
         if (!currentText) return;
         const log = document.getElementById('chatLog');
-        log.innerHTML += `<div>送信: ${currentText}</div>`;
+        const msg = document.createElement('div');
+        msg.style.borderBottom = "1px dotted #555";
+        msg.style.padding = "2px 0";
+        msg.innerText = "▶ " + currentText;
+        log.appendChild(msg);
         currentText = "";
         updateDisplay();
         log.scrollTop = log.scrollHeight;
