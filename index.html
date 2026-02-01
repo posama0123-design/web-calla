@@ -5,74 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>電話</title>
     <style>
+        /* スタイルは前回の完成版を継承 */
         * { -webkit-tap-highlight-color: transparent; outline: none; box-sizing: border-box; }
-        
-        body { 
-            font-family: -apple-system, sans-serif; 
-            background: #ffffff; 
-            color: #333; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
-            margin: 0; 
-            overflow: hidden; 
-            transition: background 0.5s;
-        }
-
-        /* 通話中背景 */
-        #bg-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-image: url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80');
-            background-size: cover; background-position: center;
-            filter: blur(20px) brightness(0.7);
-            transform: scale(1.1); z-index: -1;
-            opacity: 0; transition: opacity 0.8s ease;
-        }
-
+        body { font-family: -apple-system, sans-serif; background: #ffffff; color: #333; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; transition: background 0.5s; }
+        #bg-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80'); background-size: cover; background-position: center; filter: blur(20px) brightness(0.7); transform: scale(1.1); z-index: -1; opacity: 0; transition: opacity 0.8s ease; }
         .phone-container { width: 350px; height: 650px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; padding: 40px 20px; position: relative; }
-        
         .display-number { font-size: 38px; font-weight: 300; margin: 0; min-height: 50px; letter-spacing: 1px; }
         .status { font-size: 16px; color: #888; margin-top: 5px; height: 20px; }
-
         .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px; }
-        
-        /* キーパッドのデザイン調整 */
-        .key { 
-            width: 75px; height: 75px; background: #f2f2f7; border-radius: 50%; 
-            display: flex; flex-direction: column; justify-content: center; align-items: center; 
-            cursor: pointer; user-select: none; margin: auto; transition: background 0.1s; 
-        }
+        .key { width: 75px; height: 75px; background: #f2f2f7; border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; user-select: none; margin: auto; transition: background 0.1s; }
         .key:active { background: #d1d1d6; }
         .key .num { font-size: 30px; line-height: 1; }
         .key .abc { font-size: 10px; font-weight: bold; color: #aaa; margin-top: 2px; }
-
-        /* 【重要】通話中モードのスタイル：白背景にならないよう調整 */
         .in-call-active { color: #fff !important; }
         .in-call-active .status { color: rgba(255,255,255,0.7) !important; }
-        .in-call-active .key { background: rgba(255, 255, 255, 0.2); } /* 通話中は半透明ボタン */
+        .in-call-active .key { background: rgba(255, 255, 255, 0.2); }
         .in-call-active .key:active { background: rgba(255, 255, 255, 0.4); }
         .in-call-active .key .num { color: #fff; }
-
         .in-call-grid { display: none; grid-template-columns: repeat(3, 1fr); gap: 25px; margin-top: 50px; }
         .icon-btn { display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 13px; color: #333; cursor: pointer; }
         .circle-btn { width: 70px; height: 70px; border: 1px solid #eee; border-radius: 50%; display: flex; justify-content: center; align-items: center; background: rgba(255,255,255,0.9); }
         .circle-btn svg { width: 30px; height: 30px; fill: #333; }
-        
         .in-call-active .circle-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); }
         .in-call-active .icon-btn { color: #fff; }
         .in-call-active .circle-btn svg { fill: #fff; }
-
         .active-mode { background: #fff !important; }
         .active-mode svg { fill: #000 !important; }
-
         .bottom-controls { display: flex; justify-content: center; align-items: center; width: 100%; position: relative; min-height: 80px; gap: 20px; }
         .btn-sms { width: 55px; height: 55px; background: #28a745; border-radius: 50%; border: none; cursor: pointer; display: none; justify-content: center; align-items: center; position: absolute; left: 0; }
         .btn-call { width: 75px; height: 75px; background: #28a745; border-radius: 50%; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center; }
         .btn-hangup { width: 75px; height: 75px; background: #ff3b30; border-radius: 50%; border: none; cursor: pointer; display: none; justify-content: center; align-items: center; }
         .btn-hide { display: none; background: rgba(255,255,255,0.2); border: none; border-radius: 20px; padding: 10px 15px; cursor: pointer; font-size: 14px; color: #fff; }
         .btn-backspace { position: absolute; right: 0; background: none; border: none; color: #999; font-size: 24px; cursor: pointer; padding: 10px; }
-
         #wait-mode-btn { color: #007aff; font-size: 15px; margin-top: 20px; cursor: pointer; border: none; background: none; font-weight: 500; }
     </style>
 </head>
@@ -83,7 +47,7 @@
 <div class="phone-container" id="mainContainer">
     <div class="display-area">
         <p class="display-number" id="numberDisplay"></p>
-        <div class="status" id="status">準備中...</div>
+        <div class="status" id="status">準備完了</div>
     </div>
 
     <div id="dialerUI">
@@ -157,7 +121,19 @@
         });
     }
 
-    // タイマー開始関数
+    // --- 音声ナレーター機能 ---
+    function playGuidance() {
+        const uttr = new SpeechSynthesisUtterance("おかけになった電話番号は、現在使われておりません。番号をお確かめの上、もう一度おかけ直しください。");
+        uttr.lang = "ja-JP";
+        uttr.rate = 0.9; // 少しゆっくり、ナレーターっぽく
+        uttr.pitch = 1.1; // 落ち着いたトーン
+        speechSynthesis.speak(uttr);
+        statusEl.innerText = "接続できません";
+        
+        // ガイダンスが終わったら自動で切断（リロード）
+        uttr.onend = () => { setTimeout(() => hangup(), 1000); };
+    }
+
     function startTimer() {
         if (timerInterval) return;
         secondsElapsed = 0;
@@ -237,7 +213,7 @@
         if (localStream) localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
         pc.onconnectionstatechange = () => {
             if (pc.connectionState === 'connected') {
-                startTimer(); // タイマー開始
+                startTimer();
                 setInCallVisuals(true);
                 document.getElementById('dialerUI').style.display = "none";
                 document.getElementById('backspaceBtn').style.display = "none";
@@ -275,7 +251,13 @@
         statusEl.innerText = "発信中...";
         const roomRef = db.collection('rooms').doc(roomId);
         const roomSnapshot = await roomRef.get();
-        if (!roomSnapshot.exists) return alert("相手がいません");
+        
+        // --- 存在しない番号の時の処理 ---
+        if (!roomSnapshot.exists) {
+            playGuidance(); // ナレーター登場
+            return;
+        }
+
         createPC();
         pc.onicecandidate = e => e.candidate && roomRef.collection('calleeCandidates').add(e.candidate.toJSON());
         const data = roomSnapshot.data();
@@ -288,7 +270,10 @@
         });
     }
 
-    function hangup() { location.reload(); }
+    function hangup() { 
+        speechSynthesis.cancel(); // 喋ってる途中なら止める
+        location.reload(); 
+    }
 </script>
 </body>
 </html>
