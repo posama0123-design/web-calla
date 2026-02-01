@@ -2,66 +2,51 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>ガラケー - SO Style Home</title>
+    <title>ガラケー - SO Style Custom</title>
     <style>
-        :root {
-            --lcd-bg: #c2c7ba; /* 画像を参考にした液晶色 */
-            --lcd-text: #333;
-            --lcd-highlight: #555;
-        }
+        :root { --lcd-bg: #c2c7ba; --lcd-text: #333; }
         body { background: #1a1a1a; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: "MS Gothic", "Osaka", monospace; }
-        .phone { width: 300px; background: #silver; background: linear-gradient(#ccc, #999); border-radius: 20px; padding: 20px; border: 4px solid #666; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
+        .phone { width: 300px; background: linear-gradient(#ccc, #999); border-radius: 20px; padding: 20px; border: 4px solid #666; }
         
-        /* 画面 */
         .screen { background: var(--lcd-bg); height: 280px; border: 10px solid #111; display: flex; flex-direction: column; color: var(--lcd-text); position: relative; overflow: hidden; }
         .status-bar { font-size: 12px; display: flex; justify-content: space-between; padding: 2px 5px; border-bottom: 1px solid rgba(0,0,0,0.1); }
         
-        /* メニュー画面グリッド */
         .menu-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 15px 10px; flex: 1; }
-        .menu-item { text-align: center; font-size: 11px; cursor: pointer; border: 1px solid transparent; padding: 2px; }
-        .menu-item.selected { background-color: var(--lcd-highlight); color: #fff; }
-        .icon-placeholder { font-size: 20px; display: block; margin-bottom: 2px; }
+        .menu-item { text-align: center; font-size: 11px; padding: 2px; border: 1px solid transparent; }
+        .menu-item.selected { background-color: #555; color: #fff; }
+        .icon { font-size: 20px; display: block; }
 
-        /* アプリ画面用オーバーレイ */
         .app-layer { position: absolute; top: 20px; left: 0; width: 100%; height: calc(100% - 20px); background: var(--lcd-bg); display: none; flex-direction: column; padding: 5px; box-sizing: border-box; }
-        
-        /* キーパッド類（前回同様） */
+        #memoInput { width: 90%; flex: 1; background: transparent; border: 1px solid #555; font-family: inherit; font-size: 14px; resize: none; margin-bottom: 5px; }
+
         .navigation { display: grid; grid-template-areas: ". up ." "left ok right" ". down ."; justify-content: center; gap: 5px; margin: 15px 0; }
-        .nav-btn { width: 45px; height: 35px; background: #444; color: white; border-radius: 5px; cursor: pointer; border: 1px solid #666; }
-        .ok-btn { grid-area: ok; width: 50px; height: 50px; border-radius: 50%; background: radial-gradient(#666, #222); color: white; font-weight: bold; border: 2px solid #888; }
+        .nav-btn { width: 45px; height: 30px; background: #444; color: white; border-radius: 5px; cursor: pointer; }
+        .ok-btn { grid-area: ok; width: 50px; height: 50px; border-radius: 50%; background: #222; color: white; border: 2px solid #888; cursor: pointer; }
+
         .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
-        .keypad button { background: #eee; border: 1px solid #999; padding: 8px; border-radius: 4px; font-size: 14px; font-weight: bold; }
+        .keypad button { background: #eee; border: 1px solid #999; padding: 12px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        .back-btn { background: #ddd !important; color: #d00; }
     </style>
 </head>
 <body>
 
 <div class="phone">
     <div class="screen">
-        <div class="status-bar">
-            <span>*Yll</span>
-            <span id="clock">12:00</span>
-            <span>🔋</span>
-        </div>
+        <div class="status-bar"><span>*Yll</span><span id="clock">12:00</span><span>🔋</span></div>
 
         <div class="menu-grid" id="homeMenu">
-            <div class="menu-item selected" id="menu-0">
-                <span class="icon-placeholder">📖</span>アドレス帳
-            </div>
-            <div class="menu-item" id="menu-1">
-                <span class="icon-placeholder">📞</span>電話
-            </div>
-            <div class="menu-item" id="menu-2">
-                <span class="icon-placeholder">📝</span>メモ
-            </div>
-            <div class="menu-item"><span class="icon-placeholder">🌐</span>iモード</div>
-            <div class="menu-item"><span class="icon-placeholder">📩</span>メール</div>
-            <div class="menu-item"><span class="icon-placeholder">⚙️</span>設定</div>
+            <div class="menu-item selected" id="menu-0"><span class="icon">📖</span>アドレス帳</div>
+            <div class="menu-item" id="menu-1"><span class="icon">📞</span>電話</div>
+            <div class="menu-item" id="menu-2"><span class="icon">📝</span>メモ</div>
+            <div class="menu-item"><span class="icon">🌐</span>iモード</div>
+            <div class="menu-item"><span class="icon">📩</span>メール</div>
+            <div class="menu-item"><span class="icon">⚙️</span>設定</div>
         </div>
 
         <div class="app-layer" id="appScreen">
-            <div style="border-bottom: 1px solid #000; margin-bottom: 5px;" id="appTitle">アプリ名</div>
-            <div id="appContent" style="font-size: 14px;"></div>
-            <div style="margin-top: auto; font-size: 10px; border-top: 1px solid #000;">[戻る]キーで戻る</div>
+            <div style="border-bottom: 1px solid #000; margin-bottom: 5px; font-weight: bold;" id="appTitle"></div>
+            <div id="appContent" style="flex: 1; display: flex; flex-direction: column;"></div>
+            <div id="appFooter" style="font-size: 10px; border-top: 1px dotted #000; text-align: center;">[戻る]で保存して終了</div>
         </div>
     </div>
 
@@ -74,55 +59,68 @@
     </div>
 
     <div class="keypad">
-        <button onclick="press('1')">1</button>
-        <button onclick="press('2')">2</button>
-        <button onclick="press('3')">3</button>
-        <button onclick="closeApp()" style="color:red">戻る</button>
-        <button onclick="press('0')">0</button>
-        <button onclick="clearInput()">⌫</button>
+        <button onclick="keyPress('1')">1</button><button onclick="keyPress('2')">2</button><button onclick="keyPress('3')">3</button>
+        <button onclick="keyPress('4')">4</button><button onclick="keyPress('5')">5</button><button onclick="keyPress('6')">6</button>
+        <button onclick="keyPress('7')">7</button><button onclick="keyPress('8')">8</button><button onclick="keyPress('9')">9</button>
+        <button onclick="keyPress('*')">＊</button><button onclick="keyPress('0')">0</button><button onclick="keyPress('#')">＃</button>
+        <button class="back-btn" onclick="closeApp()" style="grid-column: span 3;">戻る / 終了</button>
     </div>
 </div>
 
 <script>
     let selectedIndex = 0;
-    const menuItems = ["アドレス帳", "電話", "メモ"];
+    let isAppOpen = false;
+
+    function moveMenu(diff) {
+        if (isAppOpen) return;
+        document.getElementById(`menu-${selectedIndex}`)?.classList.remove('selected');
+        selectedIndex = (selectedIndex + diff + 6) % 6;
+        document.getElementById(`menu-${selectedIndex}`)?.classList.add('selected');
+    }
+
+    function openApp() {
+        isAppOpen = true;
+        const appScreen = document.getElementById('appScreen');
+        const title = document.getElementById('appTitle');
+        const content = document.getElementById('appContent');
+        appScreen.style.display = 'flex';
+        
+        if (selectedIndex === 0) {
+            title.innerText = "アドレス帳";
+            content.innerHTML = "<div style='color:#666'>（登録なし）</div>";
+        } else if (selectedIndex === 1) {
+            title.innerText = "電話番号入力";
+            content.innerHTML = "<div id='dialNum' style='font-size:20px; text-align:center; margin-top:20px;'></div>";
+        } else if (selectedIndex === 2) {
+            title.innerText = "メモ帳";
+            const savedMemo = localStorage.getItem('keita_memo') || "";
+            content.innerHTML = `<textarea id="memoInput">${savedMemo}</textarea>`;
+        }
+    }
+
+    function closeApp() {
+        if (selectedIndex === 2) { // メモ保存
+            const val = document.getElementById('memoInput').value;
+            localStorage.setItem('keita_memo', val);
+        }
+        document.getElementById('appScreen').style.display = 'none';
+        isAppOpen = false;
+        document.getElementById('dialNum') && (document.getElementById('dialNum').innerText = "");
+    }
+
+    function keyPress(num) {
+        if (!isAppOpen) return;
+        if (selectedIndex === 1) { // 電話
+            document.getElementById('dialNum').innerText += num;
+        }
+        // メモ入力中のトグル入力は、以前のロジックをtextareaに応用可能
+    }
 
     function updateClock() {
         const now = new Date();
         document.getElementById('clock').innerText = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
     }
     setInterval(updateClock, 1000); updateClock();
-
-    function moveMenu(diff) {
-        document.getElementById(`menu-${selectedIndex}`)?.classList.remove('selected');
-        selectedIndex = (selectedIndex + diff + 6) % 6; // 6項目想定
-        document.getElementById(`menu-${selectedIndex}`)?.classList.add('selected');
-    }
-
-    function openApp() {
-        const appScreen = document.getElementById('appScreen');
-        const title = document.getElementById('appTitle');
-        const content = document.getElementById('appContent');
-        
-        appScreen.style.display = 'flex';
-        
-        if (selectedIndex === 0) {
-            title.innerText = "【アドレス帳】";
-            content.innerHTML = "・田中 太郎<br>・佐藤 花子<br>・鈴木 一郎";
-        } else if (selectedIndex === 1) {
-            title.innerText = "【電話】";
-            content.innerHTML = "番号を入力してください<br><br>[ ]";
-        } else if (selectedIndex === 2) {
-            title.innerText = "【メモ】";
-            content.innerHTML = "1: 買い物リスト<br>2: 会議の予定<br>3: (空き)";
-        } else {
-            content.innerHTML = "準備中...";
-        }
-    }
-
-    function closeApp() {
-        document.getElementById('appScreen').style.display = 'none';
-    }
 </script>
 </body>
 </html>
