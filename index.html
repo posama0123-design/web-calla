@@ -3,41 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>電話</title>
+    <title>電話 - FaceTime連動版</title>
     <style>
         * { -webkit-tap-highlight-color: transparent; outline: none; }
-        body { font-family: -apple-system, sans-serif; background: #ffffff; color: #333; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; touch-action: manipulation; }
+        body { font-family: -apple-system, sans-serif; background: #ffffff; color: #333; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
         .phone-container { width: 350px; height: 650px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; padding: 60px 20px; box-sizing: border-box; position: relative; }
         
+        /* 自分のビデオ（小） */
+        #localVideo { width: 90px; height: 120px; position: absolute; top: 10px; right: 10px; border-radius: 10px; border: 2px solid #fff; display: none; object-fit: cover; z-index: 100; background: #000; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        /* 相手のビデオ（全画面風） */
+        #remoteVideo { width: 100%; height: 100%; position: absolute; top: 0; left: 0; display: none; object-fit: cover; z-index: 5; background: #000; border-radius: 30px; }
+
+        .display-area { z-index: 10; position: relative; }
         .display-number { font-size: 38px; font-weight: 300; margin: 0; min-height: 50px; }
-        .status { font-size: 16px; color: #888; margin-top: 5px; height: 20px; }
+        .status { font-size: 16px; color: #888; }
 
-        .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 30px; }
-        .key { width: 75px; height: 75px; background: #f2f2f7; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 30px; user-select: none; margin: auto; }
-        .key:active { background: #d1d1d6; }
-
-        .in-call-grid { display: none; grid-template-columns: repeat(3, 1fr); gap: 25px; margin-top: 50px; }
+        .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 30px; z-index: 10; position: relative; }
+        .key { width: 75px; height: 75px; background: #f2f2f7; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 30px; }
+        
+        .in-call-grid { display: none; grid-template-columns: repeat(3, 1fr); gap: 25px; margin-top: 50px; z-index: 10; position: relative; }
         .icon-btn { display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 13px; color: #333; cursor: pointer; }
-        .circle-btn { width: 70px; height: 70px; border: 1px solid #eee; border-radius: 50%; display: flex; justify-content: center; align-items: center; background: rgba(255,255,255,0.9); pointer-events: none; }
+        .circle-btn { width: 70px; height: 70px; border: 1px solid #eee; border-radius: 50%; display: flex; justify-content: center; align-items: center; background: rgba(255,255,255,0.9); }
         .circle-btn svg { width: 30px; height: 30px; fill: #333; }
         
         .active-mode .circle-btn { background: #333 !important; }
         .active-mode .circle-btn svg { fill: #fff !important; }
 
-        .bottom-controls { display: flex; justify-content: center; align-items: center; width: 100%; position: relative; min-height: 80px; }
+        .bottom-controls { display: flex; justify-content: center; align-items: center; width: 100%; min-height: 80px; z-index: 10; position: relative; }
         .btn-call { width: 75px; height: 75px; background: #28a745; border-radius: 50%; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center; }
-        .btn-hangup { width: 75px; height: 75px; background: #ff3b30; border-radius: 50%; border: none; cursor: pointer; display: none; justify-content: center; align-items: center; margin: 0 15px; }
-        .btn-hide { display: none; background: none; border: 1px solid #ccc; border-radius: 20px; padding: 10px 15px; cursor: pointer; font-size: 14px; color: #666; }
-        .btn-backspace { position: absolute; right: 20px; background: none; border: none; color: #999; font-size: 24px; cursor: pointer; }
-
-        #wait-mode-btn { color: #007aff; font-size: 15px; margin-top: 20px; cursor: pointer; border: none; background: none; }
-        #localVideo { width: 100px; height: 140px; position: absolute; top: 20px; right: 20px; border-radius: 10px; border: 2px solid #fff; display: none; object-fit: cover; z-index: 10; background: #000; }
+        .btn-hangup { width: 75px; height: 75px; background: #ff3b30; border-radius: 50%; border: none; cursor: pointer; display: none; justify-content: center; align-items: center; }
+        .btn-hide { display: none; background: rgba(0,0,0,0.1); border: none; border-radius: 20px; padding: 10px 15px; cursor: pointer; color: #333; margin-right: 10px; }
+        .btn-backspace { position: absolute; right: 20px; background: none; border: none; color: #999; font-size: 24px; }
     </style>
 </head>
 <body>
 
 <div class="phone-container">
     <video id="localVideo" autoplay muted playsinline></video>
+    <video id="remoteVideo" autoplay playsinline></video>
     
     <div class="display-area">
         <p class="display-number" id="numberDisplay"></p>
@@ -51,24 +54,14 @@
             <div class="key" onclick="press('7')">7</div><div class="key" onclick="press('8')">8</div><div class="key" onclick="press('9')">9</div>
             <div></div><div class="key" onclick="press('0')">0</div><div></div>
         </div>
-        <button id="wait-mode-btn" onclick="createRoom()">自分の番号を発行</button>
+        <button id="wait-mode-btn" onclick="createRoom()" style="border:none; background:none; color:#007aff; margin-top:20px; cursor:pointer;">自分の番号を発行</button>
     </div>
 
     <div class="in-call-grid" id="inCallUI">
-        <div class="icon-btn" id="muteBtn" onclick="toggleMute()">
-            <div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg></div>消音
-        </div>
-        <div class="icon-btn" onclick="showKeypadInCall()">
-            <div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/></svg></div>キーパッド
-        </div>
-        <div class="icon-btn" id="speakerBtn" onclick="toggleSpeaker()">
-            <div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77zM16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM3 9v6h4l5 5V4L7 9H3z"/></svg></div>スピーカー
-        </div>
-        <div class="icon-btn"><div class="circle-btn" style="font-size: 28px;">＋</div>通話を追加</div>
-        <div class="icon-btn" id="facetimeBtn" onclick="toggleFaceTime()">
-            <div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg></div>FaceTime
-        </div>
-        <div class="icon-btn"><div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div>連絡先</div>
+        <div class="icon-btn" id="muteBtn" onclick="toggleMute()"><div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg></div>消音</div>
+        <div class="icon-btn" onclick="showKeypadInCall()"><div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/></svg></div>キーパッド</div>
+        <div class="icon-btn" id="speakerBtn" onclick="toggleSpeaker()"><div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77zM16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM3 9v6h4l5 5V4L7 9H3z"/></svg></div>スピーカー</div>
+        <div class="icon-btn" id="facetimeBtn" onclick="toggleFaceTime()"><div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg></div>FaceTime</div>
     </div>
 
     <div class="bottom-controls">
@@ -100,13 +93,14 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    let localStream, pc;
+    let localStream, pc, currentRoomId;
     let isMuted = false, isSpeakerOn = false, isVideoOn = false;
 
     const display = document.getElementById('numberDisplay');
     const statusEl = document.getElementById('status');
     const remoteAudio = document.getElementById('remoteAudio');
     const localVideo = document.getElementById('localVideo');
+    const remoteVideo = document.getElementById('remoteVideo');
 
     window.onload = async () => {
         try {
@@ -130,22 +124,24 @@
         document.getElementById('speakerBtn').classList.toggle('active-mode', isSpeakerOn);
     }
 
-    // FaceTime機能（スマホ対応）
+    // --- FaceTimeの相手送信対応 ---
     async function toggleFaceTime() {
         if (!isVideoOn) {
             if (!confirm("カメラをオンにしますか？")) return;
             try {
-                // スマホではこの「関数内」ですぐに実行する必要がある
                 const videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
                 localVideo.srcObject = videoStream;
                 localVideo.style.display = "block";
+                
+                const videoTrack = videoStream.getVideoTracks()[0];
                 if (pc) {
-                    const videoTrack = videoStream.getVideoTracks()[0];
+                    // トラックを追加し、再交渉を誘発
                     pc.addTrack(videoTrack, videoStream);
+                    renegotiate(); 
                 }
                 isVideoOn = true;
                 document.getElementById('facetimeBtn').classList.add('active-mode');
-            } catch (e) { alert("カメラを起動できませんでした。ブラウザの設定を確認してください。"); }
+            } catch (e) { alert("カメラ失敗"); }
         } else {
             localVideo.style.display = "none";
             localVideo.srcObject.getTracks().forEach(t => t.stop());
@@ -154,25 +150,39 @@
         }
     }
 
-    // 通話中のキーパッド表示
+    async function renegotiate() {
+        if (!currentRoomId) return;
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        await db.collection('rooms').doc(currentRoomId).update({ offer: { type: offer.type, sdp: offer.sdp } });
+    }
+
     function showKeypadInCall() {
         document.getElementById('inCallUI').style.display = "none";
         document.getElementById('dialerUI').style.display = "block";
         document.getElementById('hideBtn').style.display = "block";
-        document.getElementById('wait-mode-btn').style.display = "none";
     }
 
-    // 通話中のキーパッドを隠す
     function hideKeypadInCall() {
         document.getElementById('dialerUI').style.display = "none";
         document.getElementById('inCallUI').style.display = "grid";
         document.getElementById('hideBtn').style.display = "none";
     }
 
-    const createPC = () => {
+    const createPC = (roomId) => {
+        currentRoomId = roomId;
         pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
-        pc.ontrack = e => { remoteAudio.srcObject = e.streams[0]; };
+        
+        pc.ontrack = e => { 
+            if (e.streams[0].getVideoTracks().length > 0) {
+                remoteVideo.srcObject = e.streams[0];
+                remoteVideo.style.display = "block";
+            }
+            remoteAudio.srcObject = e.streams[0]; 
+        };
+
         if (localStream) localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+        
         pc.onconnectionstatechange = () => {
             if (pc.connectionState === 'connected') {
                 statusEl.innerText = "00:01";
@@ -190,14 +200,21 @@
         display.innerText = roomId;
         statusEl.innerText = "待受中...";
         const roomRef = db.collection('rooms').doc(roomId);
-        createPC();
+        createPC(roomId);
         pc.onicecandidate = e => e.candidate && roomRef.collection('callerCandidates').add(e.candidate.toJSON());
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
         await roomRef.set({ offer: { type: offer.type, sdp: offer.sdp } });
+        
         roomRef.onSnapshot(async snap => {
             const data = snap.data();
-            if (!pc.currentRemoteDescription && data?.answer) await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+            if (!pc.currentRemoteDescription && data?.answer) {
+                await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+            }
+            // 相手からの再提案(ビデオ追加など)を監視
+            if (pc.remoteDescription && data?.offer && data.offer.sdp !== pc.localDescription.sdp) {
+                // 簡易的な再接続処理
+            }
         });
         roomRef.collection('calleeCandidates').onSnapshot(snap => {
             snap.docChanges().forEach(change => { if (change.type === 'added') pc.addIceCandidate(new RTCIceCandidate(change.doc.data())); });
@@ -206,17 +223,28 @@
 
     async function call() {
         const roomId = display.innerText;
-        if (roomId.length < 1) return;
+        currentRoomId = roomId;
         const roomRef = db.collection('rooms').doc(roomId);
         const roomSnapshot = await roomRef.get();
-        if (!roomSnapshot.exists) return alert("相手がいません");
-        createPC();
+        if (!roomSnapshot.exists) return;
+        createPC(roomId);
         pc.onicecandidate = e => e.candidate && roomRef.collection('calleeCandidates').add(e.candidate.toJSON());
         const data = roomSnapshot.data();
         await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
         await roomRef.update({ answer: { type: answer.type, sdp: answer.sdp } });
+        
+        roomRef.onSnapshot(async snap => {
+            const data = snap.data();
+            if (data?.offer && pc.remoteDescription.sdp !== data.offer.sdp) {
+                 await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+                 const answer = await pc.createAnswer();
+                 await pc.setLocalDescription(answer);
+                 await roomRef.update({ answer: { type: answer.type, sdp: answer.sdp } });
+            }
+        });
+
         roomRef.collection('callerCandidates').onSnapshot(snap => {
             snap.docChanges().forEach(change => { if (change.type === 'added') pc.addIceCandidate(new RTCIceCandidate(change.doc.data())); });
         });
