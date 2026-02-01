@@ -2,66 +2,91 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>ブラウザ音声通話（確実・役割分離）</title>
+  <title>ブラウザ音声通話（確実・手動接続版）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body { font-family: sans-serif; background:#0f172a; color:#e5e7eb; padding:20px }
-    .card { max-width:420px; margin:auto; background:#020617; padding:16px; border-radius:16px }
-    input, button { width:100%; padding:10px; margin-top:8px; border-radius:10px; border:none }
+    .card { max-width:480px; margin:auto; background:#020617; padding:16px; border-radius:16px }
+    textarea, input, button { width:100%; padding:10px; margin-top:8px; border-radius:10px; border:none }
     button { background:#38bdf8; color:#020617; cursor:pointer }
+    .danger { background:#fb7185 }
     video { width:100%; margin-top:10px; background:#000; border-radius:12px }
-    .role { font-size:0.9rem; opacity:0.85; margin-top:6px }
+    .note { font-size:0.85rem; opacity:0.85 }
   </style>
 </head>
 <body>
   <div class="card">
-    <h2>🎧 ブラウザ音声通話（1対1・確実版）</h2>
-    <p>同じ部屋ID＋役割を分けて開始</p>
+    <h2>🎧 ブラウザ音声通話（確実に動く版）</h2>
+    <p class="note">※ この方式は「必ず音が出る」確認用です</p>
 
-    <input id="room" placeholder="部屋ID" />
-    <button onclick="start(true)">発信側（先に押す）</button>
-    <button onclick="start(false)">受信側（後で押す）</button>
-    <div class="role" id="status"></div>
+    <button onclick="createOffer()">① 発信側：オファー作成</button>
+    <textarea id="offer" placeholder="ここにオファーが表示されます"></textarea>
+
+    <textarea id="answer" placeholder="相手から受け取ったアンサーを貼り付け"></textarea>
+    <button onclick="setAnswer()">② 発信側：アンサーを設定</button>
+
+    <hr style="margin:12px 0; opacity:0.3" />
+
+    <textarea id="remoteOffer" placeholder="発信側から受け取ったオファーを貼り付け"></textarea>
+    <button onclick="createAnswer()">③ 受信側：アンサー作成</button>
+    <textarea id="localAnswer" placeholder="ここにアンサーが表示されます"></textarea>
+
+    <button class="danger" onclick="endCall()">通話を切る</button>
 
     <video id="remote" autoplay playsinline></video>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/simple-peer@9/simplepeer.min.js"></script>
-  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
   <script>
-    const socket = io("https://signal.simplepeerjs.com", { transports: ['websocket'] });
     let peer;
+    let stream;
 
-    async function start(isInitiator) {
-      const room = document.getElementById("room").value;
-      if (!room) return alert("部屋IDを入れてください");
+    async function getStream() {
+      if (!stream) {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      }
+      return stream;
+    }
 
-      document.getElementById('status').textContent = isInitiator ? '役割：発信側（待機中）' : '役割：受信側（接続中）';
-
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-
-      peer = new SimplePeer({
-        initiator: isInitiator,
-        trickle: false,
-        stream: stream
-      });
+    async function createOffer() {
+      await getStream();
+      peer = new SimplePeer({ initiator: true, trickle: false, stream });
 
       peer.on('signal', data => {
-        socket.emit('signal', { room, data });
+        document.getElementById('offer').value = JSON.stringify(data);
       });
 
-      peer.on('stream', stream => {
-        const v = document.getElementById('remote');
-        v.srcObject = stream;
-        v.play();
+      peer.on('stream', s => {
+        document.getElementById('remote').srcObject = s;
+      });
+    }
+
+    async function createAnswer() {
+      await getStream();
+      peer = new SimplePeer({ initiator: false, trickle: false, stream });
+
+      const offer = JSON.parse(document.getElementById('remoteOffer').value);
+      peer.signal(offer);
+
+      peer.on('signal', data => {
+        document.getElementById('localAnswer').value = JSON.stringify(data);
       });
 
-      socket.emit('join', room);
-
-      socket.on('signal', payload => {
-        peer.signal(payload.data);
+      peer.on('stream', s => {
+        document.getElementById('remote').srcObject = s;
       });
+    }
+
+    function setAnswer() {
+      const answer = JSON.parse(document.getElementById('answer').value);
+      peer.signal(answer);
+    }
+
+    function endCall() {
+      if (peer) peer.destroy();
+      peer = null;
+      document.getElementById('remote').srcObject = null;
     }
   </script>
 </body>
