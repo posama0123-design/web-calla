@@ -3,24 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ガラケー通話</title>
+    <title>ガラケー通話・改</title>
     <style>
-        /* ガラケー風レトロデザイン */
         body { background: #333; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: "MS Gothic", "Courier New", monospace; }
         .phone { width: 280px; background: #c0c0c0; border: 4px solid #888; border-radius: 20px; padding: 20px; box-shadow: 10px 10px 0 #000; }
         .screen { background: #9dbb16; border: 5px solid #222; height: 180px; padding: 10px; color: #000; overflow: hidden; position: relative; font-weight: bold; }
-        .battery { position: absolute; top: 5px; right: 5px; border: 2px solid #000; width: 25px; height: 10px; }
-        .status-text { font-size: 14px; margin-top: 10px; border-bottom: 2px solid #000; padding-bottom: 5px; }
         
-        .id-display { font-size: 24px; text-align: center; margin-top: 20px; }
+        /* バッテリー棒1本 */
+        .battery { position: absolute; top: 5px; right: 5px; border: 2px solid #000; width: 25px; height: 10px; display: flex; align-items: center; padding: 1px; }
+        .battery::after { content: ""; background: #000; width: 6px; height: 100%; } /* 棒1本 */
+        
+        .status-text { font-size: 14px; margin-top: 10px; border-bottom: 2px solid #000; padding-bottom: 5px; }
+        .id-display { font-size: 24px; text-align: center; margin-top: 15px; }
         .input-area { margin-top: 15px; }
-        input { width: 90%; background: transparent; border: none; border-bottom: 2px solid #000; font-size: 18px; text-align: center; outline: none; font-family: inherit; }
+        input { width: 90%; background: transparent; border: none; border-bottom: 2px solid #000; font-size: 22px; text-align: center; outline: none; font-family: inherit; color: #000; }
         
         .buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
-        .key { background: #eee; border: 2px solid #444; border-radius: 5px; padding: 10px; text-align: center; box-shadow: 2px 2px 0 #444; cursor: pointer; color: #000; }
-        .key:active { transform: translate(2px, 2px); box-shadow: none; }
-        .call-btn { background: #008000; color: white; grid-column: span 3; font-weight: bold; margin-top: 5px; }
-        .end-btn { background: #ff0000; color: white; display: none; grid-column: span 3; }
+        .key { background: #eee; border: 2px solid #444; border-radius: 5px; padding: 12px; text-align: center; box-shadow: 2px 2px 0 #444; cursor: pointer; color: #000; font-size: 18px; user-select: none; }
+        .key:active { transform: translate(2px, 2px); box-shadow: none; background: #ddd; }
+        .call-btn { background: #008000; color: white; grid-column: span 3; font-weight: bold; margin-top: 5px; font-size: 20px; }
+        .end-btn { background: #ff0000; color: white; display: none; grid-column: span 3; font-size: 20px; }
+        #timer { font-size: 24px; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -28,23 +31,26 @@
 <div class="phone">
     <div class="screen">
         <div class="battery"></div>
-        <div class="status-text" id="status">📶3G</div>
-        <div style="font-size: 10px;">MY ID:</div>
+        <div class="status-text" id="status">📶 圏外</div>
+        <div style="font-size: 10px; margin-top: 5px;">MY ID:</div>
         <div id="my-id" class="id-display">--</div>
-        <div id="calling-ui" style="display:none; text-align:center; margin-top:20px;">
-            <div style="font-size: 20px;">通話中</div>
+        
+        <div id="calling-ui" style="display:none; text-align:center; margin-top:10px;">
+            <div style="font-size: 18px;">通話中</div>
             <div id="timer">00:00</div>
         </div>
+
         <div class="input-area" id="input-ui">
-            <input type="text" id="room-name" placeholder="合言葉入力" maxlength="5">
+            <input type="text" id="room-name" placeholder="合言葉" readonly>
         </div>
     </div>
 
     <div class="buttons">
-        <div class="key">1</div><div class="key">2</div><div class="key">3</div>
-        <div class="key">4</div><div class="key">5</div><div class="key">6</div>
-        <div class="key">7</div><div class="key">8</div><div class="key">9</div>
-        <div class="key">*</div><div class="key">0</div><div class="key">#</div>
+        <div class="key" onclick="pressKey('1')">1</div><div class="key" onclick="pressKey('2')">2</div><div class="key" onclick="pressKey('3')">3</div>
+        <div class="key" onclick="pressKey('4')">4</div><div class="key" onclick="pressKey('5')">5</div><div class="key" onclick="pressKey('6')">6</div>
+        <div class="key" onclick="pressKey('7')">7</div><div class="key" onclick="pressKey('8')">8</div><div class="key" onclick="pressKey('9')">9</div>
+        <div class="key" onclick="pressKey('*')">*</div><div class="key" onclick="pressKey('0')">0</div><div class="key" onclick="pressKey('#')">#</div>
+        
         <button id="make-call" class="key call-btn">📞 発信</button>
         <button id="end-call" class="key end-btn" onclick="location.reload()">📴 切断</button>
     </div>
@@ -56,43 +62,59 @@
 <script>
     const { SkyWayContext, SkyWayRoom, SkyWayStreamFactory } = SkyWayRoom;
     const API_KEY = '1bb9fbdb-aa26-4350-a40e-7cc6429e1838';
+    let localStream;
+
+    // キーパッド機能
+    function pressKey(num) {
+        const input = document.getElementById('room-name');
+        if (input.value.length < 5) {
+            input.value += num;
+        }
+    }
 
     async function start() {
         const myId = Math.floor(Math.random() * 100);
         document.getElementById('my-id').innerText = myId;
 
         try {
-            const audioStream = await SkyWayStreamFactory.createMicrophoneAudioStream();
-            document.getElementById('status').innerText = "接続待ち (アンテナ3本)";
+            // 起動時にマイクを要求
+            localStream = await SkyWayStreamFactory.createMicrophoneAudioStream();
+            document.getElementById('status').innerText = "📶 圏外 (マイクOK)";
 
             document.getElementById('make-call').onclick = async () => {
                 const roomName = document.getElementById('room-name').value;
-                if(!roomName) return alert("合言葉をいれてね！");
+                if(!roomName) return alert("下のボタンで合言葉を入れてね！");
 
-                document.getElementById('status').innerText = "発信中...";
-                const context = await SkyWayContext.Create(API_KEY, { auth: { type: 'none' } });
-                const room = await SkyWayRoom.FindOrCreate(context, { type: 'p2p', name: roomName });
-                const me = await room.join();
-                await me.publish(audioStream);
+                document.getElementById('status').innerText = "☎ 発信中...";
+                
+                try {
+                    const context = await SkyWayContext.Create(API_KEY, { auth: { type: 'none' } });
+                    const room = await SkyWayRoom.FindOrCreate(context, { type: 'p2p', name: roomName });
+                    const me = await room.join();
+                    await me.publish(localStream);
 
-                room.onStreamPublished.add(async ({ stream }) => {
-                    if (stream.contentType === 'audio') {
-                        const { track } = await me.subscribe(stream.id);
-                        track.attach(document.getElementById('remote-audio'));
-                        
-                        // 画面切り替え
-                        document.getElementById('status').innerText = "通話中";
-                        document.getElementById('input-ui').style.display = 'none';
-                        document.getElementById('my-id').style.display = 'none';
-                        document.getElementById('calling-ui').style.display = 'block';
-                        document.getElementById('make-call').style.display = 'none';
-                        document.getElementById('end-call').style.display = 'block';
-                        startTimer();
-                    }
-                });
+                    room.onStreamPublished.add(async ({ stream }) => {
+                        if (stream.contentType === 'audio') {
+                            const { track } = await me.subscribe(stream.id);
+                            track.attach(document.getElementById('remote-audio'));
+                            
+                            // 画面切り替え
+                            document.getElementById('status').innerText = "📶 通話中";
+                            document.getElementById('input-ui').style.display = 'none';
+                            document.getElementById('my-id').style.display = 'none';
+                            document.getElementById('calling-ui').style.display = 'block';
+                            document.getElementById('make-call').style.display = 'none';
+                            document.getElementById('end-call').style.display = 'block';
+                            startTimer();
+                        }
+                    });
+                } catch (err) {
+                    alert("通信エラー。もう一度試してね");
+                }
             };
         } catch (e) {
-            document.getElementById('status').innerText = "マイク設定エラー";
+            document.getElementById('status').innerText = "⚠️ マイク許可なし";
+            console.error(e);
         }
     }
 
