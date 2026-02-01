@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>ブラウザ音声通話（確実版）</title>
+  <title>ブラウザ音声通話（確実・役割分離）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body { font-family: sans-serif; background:#0f172a; color:#e5e7eb; padding:20px }
@@ -10,15 +10,18 @@
     input, button { width:100%; padding:10px; margin-top:8px; border-radius:10px; border:none }
     button { background:#38bdf8; color:#020617; cursor:pointer }
     video { width:100%; margin-top:10px; background:#000; border-radius:12px }
+    .role { font-size:0.9rem; opacity:0.85; margin-top:6px }
   </style>
 </head>
 <body>
   <div class="card">
-    <h2>🎧 ブラウザ音声通話（1対1）</h2>
-    <p>同じ部屋IDを2人で入力して開始</p>
+    <h2>🎧 ブラウザ音声通話（1対1・確実版）</h2>
+    <p>同じ部屋ID＋役割を分けて開始</p>
 
     <input id="room" placeholder="部屋ID" />
-    <button onclick="start()">通話開始</button>
+    <button onclick="start(true)">発信側（先に押す）</button>
+    <button onclick="start(false)">受信側（後で押す）</button>
+    <div class="role" id="status"></div>
 
     <video id="remote" autoplay playsinline></video>
   </div>
@@ -30,31 +33,33 @@
     const socket = io("https://signal.simplepeerjs.com", { transports: ['websocket'] });
     let peer;
 
-    async function start() {
+    async function start(isInitiator) {
       const room = document.getElementById("room").value;
       if (!room) return alert("部屋IDを入れてください");
+
+      document.getElementById('status').textContent = isInitiator ? '役割：発信側（待機中）' : '役割：受信側（接続中）';
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
 
       peer = new SimplePeer({
-        initiator: false,
+        initiator: isInitiator,
         trickle: false,
         stream: stream
       });
 
-      peer.on("signal", data => {
-        socket.emit("signal", { room, data });
+      peer.on('signal', data => {
+        socket.emit('signal', { room, data });
       });
 
-      peer.on("stream", stream => {
-        const v = document.getElementById("remote");
+      peer.on('stream', stream => {
+        const v = document.getElementById('remote');
         v.srcObject = stream;
         v.play();
       });
 
-      socket.emit("join", room);
+      socket.emit('join', room);
 
-      socket.on("signal", payload => {
+      socket.on('signal', payload => {
         peer.signal(payload.data);
       });
     }
