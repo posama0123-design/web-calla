@@ -3,53 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>電話</title>
+    <title>電話 & SMS</title>
     <style>
-        /* 既存のスタイルを継承しつつタブ用のスタイルを追加 */
         * { -webkit-tap-highlight-color: transparent; outline: none; box-sizing: border-box; }
-        body { font-family: -apple-system, sans-serif; background: #ffffff; color: #333; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; transition: background 0.5s; }
+        body { font-family: -apple-system, sans-serif; background: #ffffff; color: #333; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
 
-        #bg-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80'); background-size: cover; background-position: center; filter: blur(20px) brightness(0.7); transform: scale(1.1); z-index: -1; opacity: 0; transition: opacity 0.8s ease; }
+        .phone-container { width: 350px; height: 680px; display: flex; flex-direction: column; background: #fff; position: relative; border: 1px solid #ddd; border-radius: 30px; overflow: hidden; }
 
-        .phone-container { width: 350px; height: 650px; text-align: center; display: flex; flex-direction: column; background: #fff; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
+        /* 上部の入力エリア（ここを自由に入力可能に） */
+        .top-input-area { padding: 20px; background: #f9f9f9; border-bottom: 1px solid #eee; }
+        .input-label { font-size: 12px; color: #888; margin-bottom: 5px; text-align: left; display: block; }
         
-        .main-content { flex: 1; display: flex; flex-direction: column; justify-content: space-between; padding: 40px 20px 10px; }
+        /* 宛先番号入力（キーボードで打てる） */
+        #numberDisplay { 
+            width: 100%; border: none; background: transparent; font-size: 28px; 
+            font-weight: 300; margin-bottom: 10px; outline: none; padding: 0;
+        }
+        
+        /* メッセージ入力 */
+        .sms-input { 
+            width: 100%; height: 60px; border: 1px solid #e0e0e0; border-radius: 10px; 
+            padding: 10px; font-size: 14px; resize: none; background: #fff;
+        }
 
-        .display-number { font-size: 38px; font-weight: 300; margin: 0; min-height: 50px; letter-spacing: 1px; }
-        .status { font-size: 16px; color: #888; margin-top: 5px; height: 20px; }
-
-        .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px; }
-        .key { width: 75px; height: 75px; background: #f2f2f7; border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; user-select: none; margin: auto; }
+        /* キーパッド */
+        .keypad-container { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 0 20px; }
+        .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .key { 
+            width: 70px; height: 70px; background: #f2f2f7; border-radius: 50%; 
+            display: flex; flex-direction: column; justify-content: center; align-items: center; 
+            cursor: pointer; margin: auto; transition: background 0.1s;
+        }
         .key:active { background: #d1d1d6; }
-        .key .num { font-size: 30px; line-height: 1; }
-        .key .abc { font-size: 10px; font-weight: bold; color: #aaa; margin-top: 2px; }
+        .key .num { font-size: 28px; line-height: 1; }
+        .key .abc { font-size: 9px; font-weight: bold; color: #aaa; }
 
-        /* SMS画面のスタイル */
-        #smsUI { display: none; flex-direction: column; align-items: center; padding-top: 20px; }
-        .sms-box { width: 100%; background: #f2f2f7; border-radius: 15px; padding: 15px; text-align: left; margin-bottom: 20px; }
-        .sms-input { width: 100%; border: none; background: transparent; font-size: 16px; resize: none; outline: none; }
+        /* 下部ボタン */
+        .bottom-actions { display: flex; justify-content: center; align-items: center; gap: 20px; padding: 20px; position: relative; }
+        .btn-call { width: 70px; height: 70px; background: #28a745; border-radius: 50%; border: none; display: flex; justify-content: center; align-items: center; cursor: pointer; }
+        .btn-sms-send { width: 50px; height: 50px; background: #007aff; border-radius: 50%; border: none; display: flex; justify-content: center; align-items: center; cursor: pointer; }
+        .btn-backspace { position: absolute; right: 30px; background: none; border: none; color: #999; font-size: 22px; cursor: pointer; }
 
-        /* タブバーのスタイル */
-        .tab-bar { height: 85px; border-top: 1px solid #ddd; display: flex; justify-content: space-around; align-items: center; padding-bottom: 15px; background: rgba(255,255,255,0.9); }
-        .tab-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: #888; cursor: pointer; font-size: 10px; }
-        .tab-item.active { color: #007aff; }
-        .tab-item svg { width: 26px; height: 26px; fill: currentColor; }
-
-        /* 通話中UI */
-        .in-call-active { background: transparent !important; color: #fff !important; }
-        .in-call-active .tab-bar { display: none; }
-        .in-call-active .key { background: rgba(255, 255, 255, 0.2); }
-        .in-call-active .circle-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); }
-
-        .in-call-grid { display: none; grid-template-columns: repeat(3, 1fr); gap: 25px; margin-top: 50px; }
-        .icon-btn { display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; }
-        .circle-btn { width: 70px; height: 70px; border-radius: 50%; display: flex; justify-content: center; align-items: center; }
-        .circle-btn svg { width: 30px; height: 30px; fill: #fff; }
-
-        .bottom-controls { display: flex; justify-content: center; align-items: center; width: 100%; position: relative; min-height: 85px; }
-        .btn-call { width: 75px; height: 75px; background: #28a745; border-radius: 50%; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center; }
-        .btn-hangup { width: 75px; height: 75px; background: #ff3b30; border-radius: 50%; border: none; cursor: pointer; display: none; justify-content: center; align-items: center; }
-        .btn-backspace { position: absolute; right: 10px; background: none; border: none; color: #999; font-size: 24px; cursor: pointer; }
+        /* 通話中用の背景（前回同様） */
+        #bg-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?fit=crop&w=1200&q=80') center/cover; filter: blur(20px) brightness(0.7); z-index: -1; opacity: 0; transition: 0.8s; }
     </style>
 </head>
 <body>
@@ -57,109 +53,71 @@
 <div id="bg-overlay"></div>
 
 <div class="phone-container" id="mainContainer">
-    <div class="main-content">
-        <div class="display-area">
-            <p class="display-number" id="numberDisplay"></p>
-            <div class="status" id="status">準備中...</div>
-        </div>
+    <div class="top-input-area">
+        <label class="input-label">宛先:</label>
+        <input type="tel" id="numberDisplay" placeholder="番号を入力" maxlength="15">
+        
+        <label class="input-label">SMSメッセージ:</label>
+        <textarea class="sms-input" id="smsText" placeholder="メッセージを入力..."></textarea>
+    </div>
 
-        <div id="dialerUI">
-            <div class="keypad">
-                <div class="key" onclick="press('1')"><div class="num">1</div><div class="abc">&nbsp;</div></div>
-                <div class="key" onclick="press('2')"><div class="num">2</div><div class="abc">ABC</div></div>
-                <div class="key" onclick="press('3')"><div class="num">3</div><div class="abc">DEF</div></div>
-                <div class="key" onclick="press('4')"><div class="num">4</div><div class="abc">GHI</div></div>
-                <div class="key" onclick="press('5')"><div class="num">5</div><div class="abc">JKL</div></div>
-                <div class="key" onclick="press('6')"><div class="num">6</div><div class="abc">MNO</div></div>
-                <div class="key" onclick="press('7')"><div class="num">7</div><div class="abc">PQRS</div></div>
-                <div class="key" onclick="press('8')"><div class="num">8</div><div class="abc">TUV</div></div>
-                <div class="key" onclick="press('9')"><div class="num">9</div><div class="abc">WXYZ</div></div>
-                <div class="key" onclick="press('*')"><div class="num" style="margin-top:10px">*</div><div class="abc">&nbsp;</div></div>
-                <div class="key" onclick="press('0')"><div class="num">0</div><div class="abc">+</div></div>
-                <div class="key" onclick="press('#')"><div class="num">#</div><div class="abc">&nbsp;</div></div>
-            </div>
-            <button id="wait-mode-btn" onclick="createRoom()">自分の番号を発行</button>
-            <div class="bottom-controls">
-                <button class="btn-call" id="callBtn" onclick="call()">
-                    <svg width="35" height="35" fill="white" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
-                </button>
-                <button class="btn-backspace" id="backspaceBtn" onclick="backspace()">⌫</button>
-            </div>
-        </div>
-
-        <div id="smsUI">
-            <div class="sms-box">
-                <p style="font-size: 12px; color: #888; margin: 0 0 5px;">宛先: <span id="smsTarget">番号未入力</span></p>
-                <textarea class="sms-input" placeholder="メッセージを入力..." id="smsText"></textarea>
-            </div>
-            <button onclick="sendRealSMS()" style="width:100%; background:#28a745; color:white; border:none; padding:15px; border-radius:12px; font-weight:bold; cursor:pointer;">SMSを送信</button>
-        </div>
-
-        <div class="in-call-grid" id="inCallUI">
-            <div class="icon-btn" onclick="toggleMute()"><div class="circle-btn" id="muteCircle"><svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg></div>消音</div>
-            <div class="icon-btn" onclick="showKeypadInCall()"><div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/></svg></div>キーパッド</div>
-            <div class="icon-btn" onclick="toggleSpeaker()"><div class="circle-btn" id="speakerCircle"><svg viewBox="0 0 24 24"><path d="M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77zM16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM3 9v6h4l5 5V4L7 9H3z"/></svg></div>スピーカー</div>
-            <div class="icon-btn"><div class="circle-btn" style="font-size: 28px;">＋</div>通話追加</div>
-            <div class="icon-btn"><div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg></div>FaceTime</div>
-            <div class="icon-btn"><div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div>連絡先</div>
-            <div style="grid-column: span 3; margin-top: 20px;">
-                <button class="btn-hangup" id="hangupBtn" onclick="hangup()" style="display:flex; margin:auto;"><svg width="35" height="35" fill="white" viewBox="0 0 24 24"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg></button>
-            </div>
+    <div class="keypad-container">
+        <div class="keypad">
+            <div class="key" onclick="press('1')"><div class="num">1</div><div class="abc">&nbsp;</div></div>
+            <div class="key" onclick="press('2')"><div class="num">2</div><div class="abc">ABC</div></div>
+            <div class="key" onclick="press('3')"><div class="num">3</div><div class="abc">DEF</div></div>
+            <div class="key" onclick="press('4')"><div class="num">4</div><div class="abc">GHI</div></div>
+            <div class="key" onclick="press('5')"><div class="num">5</div><div class="abc">JKL</div></div>
+            <div class="key" onclick="press('6')"><div class="num">6</div><div class="abc">MNO</div></div>
+            <div class="key" onclick="press('7')"><div class="num">7</div><div class="abc">PQRS</div></div>
+            <div class="key" onclick="press('8')"><div class="num">8</div><div class="abc">TUV</div></div>
+            <div class="key" onclick="press('9')"><div class="num">9</div><div class="abc">WXYZ</div></div>
+            <div class="key" onclick="press('*')"><div class="num">*</div><div class="abc">&nbsp;</div></div>
+            <div class="key" onclick="press('0')"><div class="num">0</div><div class="abc">+</div></div>
+            <div class="key" onclick="press('#')"><div class="num">#</div><div class="abc">&nbsp;</div></div>
         </div>
     </div>
 
-    <div class="tab-bar" id="tabBar">
-        <div class="tab-item" onclick="switchTab('history')"><svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>履歴</div>
-        <div class="tab-item" id="tabSms" onclick="switchTab('sms')"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>SMS</div>
-        <div class="tab-item active" id="tabKeypad" onclick="switchTab('keypad')"><svg viewBox="0 0 24 24"><path d="M12 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm7-7H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.11 0 2-.9 2-2V5c0-1.1-.89-2-2-2z"/></svg>キーパッド</div>
-        <div class="tab-item" onclick="alert('連絡先は準備中です')"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>連絡先</div>
+    <div class="bottom-actions">
+        <button class="btn-sms-send" onclick="sendRealSMS()" title="SMS送信">
+            <svg width="24" height="24" fill="white" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        </button>
+        
+        <button class="btn-call" onclick="call()" title="発信">
+            <svg width="30" height="30" fill="white" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+        </button>
+        
+        <button class="btn-backspace" onclick="backspace()">⌫</button>
     </div>
-    
-    <audio id="remoteAudio" autoplay></audio>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
-
 <script>
-    /* 既存のFirebase設定と変数をそのまま使用 */
-    const firebaseConfig = { apiKey: "AIzaSyBaMe4Cz_3W75F5NCtioAguONgukg3-k0g", authDomain: "my-call-14d70.firebaseapp.com", projectId: "my-call-14d70", storageBucket: "my-call-14d70.firebasestorage.app", messagingSenderId: "769393584037", appId: "1:769393584037:web:279aa04477f2649230ea4c" };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    let localStream, pc, timerInterval;
+    const display = document.getElementById('numberDisplay');
+    const smsText = document.getElementById('smsText');
 
-    // --- タブ切り替えロジック ---
-    function switchTab(target) {
-        const dialer = document.getElementById('dialerUI');
-        const sms = document.getElementById('smsUI');
-        const tabSms = document.getElementById('tabSms');
-        const tabKeypad = document.getElementById('tabKeypad');
-
-        dialer.style.display = 'none';
-        sms.style.display = 'none';
-        tabSms.classList.remove('active');
-        tabKeypad.classList.remove('active');
-
-        if (target === 'keypad') {
-            dialer.style.display = 'block';
-            tabKeypad.classList.add('active');
-        } else if (target === 'sms') {
-            sms.style.display = 'flex';
-            tabSms.classList.add('active');
-            document.getElementById('smsTarget').innerText = document.getElementById('numberDisplay').innerText || "番号未入力";
-        }
+    // キーパッド押し
+    function press(num) {
+        display.value += num;
+        // 音を鳴らすなどのロジック（省略）
     }
 
+    // 1文字消去
+    function backspace() {
+        display.value = display.value.slice(0, -1);
+    }
+
+    // 本物のSMS送信
     function sendRealSMS() {
-        const num = document.getElementById('numberDisplay').innerText;
-        const body = document.getElementById('smsText').value;
+        const num = display.value;
+        const msg = smsText.value;
         if (!num) { alert("番号を入力してください"); return; }
-        window.location.href = `sms:${num}?body=${encodeURIComponent(body)}`;
+        window.location.href = `sms:${num}?body=${encodeURIComponent(msg)}`;
     }
 
-    // --- 既存の通話系ロジック（そのままマージ） ---
-    // (press, backspace, call, createRoom, setupPC, etc...)
-    // ※省略していますが、元のコードの関数をここに入れてください。
+    function call() {
+        alert(display.value + " に発信します...");
+        // ここに以前のWebrtc/Firebaseロジックを統合
+    }
 </script>
 </body>
 </html>
