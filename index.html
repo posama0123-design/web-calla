@@ -43,12 +43,47 @@
 <script>
     // --- ⚠️ ここにあなたのFirebase設定を貼り付けてください ---
     const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "YOUR_PROJECT.firebaseapp.com",
-        projectId: "YOUR_PROJECT_ID",
-        storageBucket: "YOUR_PROJECT.appspot.com",
-        messagingSenderId: "...",
-        appId: "..."
+     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+
+<script>
+    // 1. あなたのFirebase設定を反映
+    const firebaseConfig = {
+        apiKey: "AIzaSyBaMe4Cz_3W75F5NCtioAguONgukg3-k0g",
+        authDomain: "my-call-14d70.firebaseapp.com",
+        projectId: "my-call-14d70",
+        storageBucket: "my-call-14d70.firebasestorage.app",
+        messagingSenderId: "769393584037",
+        appId: "1:769393584037:web:279aa04477f2649230ea4c",
+        measurementId: "G-EXHXKKRT56"
+    };
+    // 2. Firebaseの初期化
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // --- ここから下に、前の返信で送った「RTCPeerConnection」のロジックが続きます ---
+    let localStream = null;
+    let pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+
+    const status = document.getElementById('status');
+
+    // マイク準備ボタン
+    document.getElementById('startAudio').onclick = async () => {
+        try {
+            localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+            status.innerText = "準備完了！部屋を作るか参加してください";
+            document.getElementById('createBtn').disabled = false;
+            document.getElementById('joinBtn').disabled = false;
+        } catch (e) {
+            status.innerText = "マイクが使えません。HTTPS環境で試してください。";
+        }
+    };
+
+    // 「部屋を作成」と「部屋に参加」のロジックをここに合体させて完成です
+    // (長くなるので省略していますが、前のコードの onclick 以降を繋げてください)
+</script>
+      
     };
     // -----------------------------------------------------
 
