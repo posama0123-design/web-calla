@@ -3,31 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>爆速音声通話サイト</title>
+    <title>爆速通話アプリ</title>
     <style>
-        body { font-family: sans-serif; text-align: center; background: #0f172a; color: #e2e8f0; padding: 20px; }
-        .card { background: #1e293b; padding: 30px; border-radius: 12px; display: inline-block; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); max-width: 400px; width: 90%; }
-        h1 { font-size: 1.5rem; margin-bottom: 20px; }
-        input { width: 80%; padding: 12px; margin: 10px 0; border-radius: 8px; border: none; background: #334155; color: white; text-align: center; }
-        button { width: 85%; padding: 12px; margin-top: 10px; border-radius: 8px; border: none; background: #3b82f6; color: white; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        body { font-family: sans-serif; text-align: center; background: #0f172a; color: #fff; padding: 20px; margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; }
+        .card { background: #1e293b; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); width: 100%; max-width: 350px; }
+        .id-badge { background: #334155; padding: 10px; border-radius: 10px; margin: 15px 0; font-size: 1.2rem; color: #38bdf8; font-weight: bold; }
+        input { width: 80%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; text-align: center; }
+        button { width: 85%; padding: 12px; margin-top: 10px; border-radius: 8px; border: none; background: #3b82f6; color: white; font-weight: bold; cursor: pointer; }
         button:hover { background: #2563eb; }
-        #status { margin-top: 20px; font-size: 0.9rem; color: #94a3b8; }
-        .id-display { font-size: 1.2rem; color: #60a5fa; font-weight: bold; margin: 10px 0; }
+        #status { margin-top: 20px; font-size: 0.8rem; color: #94a3b8; }
     </style>
 </head>
 <body>
 
     <div class="card">
-        <h1>🎙 音声通話ルーム</h1>
-        <p>あなたの番号</p>
-        <div id="my-id" class="id-display">発行中...</div>
+        <h2>🎙 通話ルーム</h2>
+        <p>あなたのID</p>
+        <div id="my-id" class="id-badge">読込中...</div>
         
-        <hr style="border: 0.5px solid #334155; margin: 20px 0;">
-        
-        <input type="text" id="their-id" placeholder="合言葉（数字など）を入力">
+        <input type="text" id="room-name" placeholder="合言葉を決めて入力">
         <button id="make-call">通話を開始する</button>
         
-        <div id="status">マイクを許可して待機してください</div>
+        <div id="status">マイクを許可してください</div>
         <audio id="remote-audio" autoplay></audio>
     </div>
 
@@ -35,43 +32,46 @@
     <script>
         const { SkyWayContext, SkyWayRoom, SkyWayStreamFactory } = SkyWayRoom;
 
-        // あなたのアプリケーションIDを設定済みです
+        // あなたのIDと「認証なし」設定を組み込み済み
         const API_KEY = '1bb9fbdb-aa26-4350-a40e-7cc6429e1838'; 
 
         async function start() {
-            // ランダムな自分の番号を表示（友達に教える用）
-            const myId = "ID-" + Math.floor(Math.random() * 10000);
+            // ランダムなIDを表示
+            const myId = Math.floor(Math.random() * 100);
             document.getElementById('my-id').innerText = myId;
 
             try {
                 // マイクの準備
                 const audioStream = await SkyWayStreamFactory.createMicrophoneAudioStream();
-                document.getElementById('status').innerText = "マイク準備完了！合言葉を入れて開始してください";
+                document.getElementById('status').innerText = "準備完了！合言葉を入れてね";
 
                 document.getElementById('make-call').onclick = async () => {
-                    const roomName = document.getElementById('their-id').value;
-                    if(!roomName) return alert("合言葉（部屋名）を決めて入力してね");
+                    const roomName = document.getElementById('room-name').value;
+                    if(!roomName) return alert("二人で同じ合言葉を入れてね！");
 
                     document.getElementById('status').innerText = "接続中...";
 
-                    const context = await SkyWayContext.Create(API_KEY);
+                    // ここが重要！auth: { type: 'none' } を追加しました
+                    const context = await SkyWayContext.Create(API_KEY, {
+                        auth: { type: 'none' }
+                    });
+
                     const room = await SkyWayRoom.FindOrCreate(context, { type: 'p2p', name: roomName });
                     const me = await room.join();
                     
-                    // 自分の声を送信
                     await me.publish(audioStream);
 
-                    // 相手の声を受信して再生
                     room.onStreamPublished.add(async ({ stream }) => {
                         if (stream.contentType === 'audio') {
                             const { track } = await me.subscribe(stream.id);
                             track.attach(document.getElementById('remote-audio'));
-                            document.getElementById('status').innerText = "通話中！お話しできます";
+                            document.getElementById('status').innerText = "通話中！声は聞こえるかな？";
                         }
                     });
                 };
             } catch (e) {
-                document.getElementById('status').innerText = "マイクの使用を許可してください";
+                document.getElementById('status').innerText = "エラー：マイクを許可してリロードしてね";
+                console.error(e);
             }
         }
         start();
