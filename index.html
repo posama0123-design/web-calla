@@ -3,75 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>シンプルビデオ通話</title>
+    <title>音声通話ルーム</title>
     <script src="https://cdn.jsdelivr.net/npm/@skyway-sdk/room/dist/skyway_room.js"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; background: #f0f2f5; }
-        video { width: 300px; border-radius: 10px; background: #000; margin: 10px; }
-        .container { display: flex; flex-wrap: wrap; justify-content: center; }
-        #room-name { padding: 8px; border-radius: 5px; border: 1px solid #ccc; }
-        button { padding: 8px 15px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #e5ddd5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; width: 300px; }
+        h2 { color: #075e54; margin-bottom: 20px; }
+        input { width: 80%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
+        button { background-color: #25d366; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        button:hover { background-color: #128c7e; }
+        #status { margin-top: 15px; font-size: 14px; color: #666; }
     </style>
 </head>
 <body>
 
-    <h2>Webビデオ通話ルーム</h2>
-    
-    <div>
-        <input type="text" id="room-name" placeholder="ルーム名（例：my-room）">
-        <button id="join-button">入室する</button>
-    </div>
+<div class="card">
+    <h2>音声通話</h2>
+    <input type="text" id="room-name" placeholder="ルーム名を入力">
+    <button id="join-button">通話開始</button>
+    <p id="status">ルーム名を入力して入室してください</p>
+    <div id="remote-media-area"></div>
+</div>
 
-    <div class="container" id="video-container">
-        <video id="local-video" autoplay playsinline muted></video>
-    </div>
+<script>
+    const { SkyWayContext, SkyWayRoom, SkyWayStreamFactory } = SkyWay;
 
-    <script>
-        const { SkyWayContext, SkyWayRoom, SkyWayStreamFactory } = SkyWay;
+    const appId = '1bb9fbdb-aa26-4350-a40e-7cc6429e1838';
+    const joinButton = document.getElementById('join-button');
+    const roomNameInput = document.getElementById('room-name');
+    const statusText = document.getElementById('status');
+    const remoteMediaArea = document.getElementById('remote-media-area');
 
-        const joinButton = document.getElementById('join-button');
-        const roomNameInput = document.getElementById('room-name');
-        const videoContainer = document.getElementById('video-container');
-        const localVideo = document.getElementById('local-video');
+    joinButton.onclick = async () => {
+        const roomName = roomNameInput.value;
+        if (!roomName) {
+            alert('ルーム名を入力してください');
+            return;
+        }
 
-        joinButton.onclick = async () => {
-            if (!roomNameInput.value) return alert('ルーム名を入力してください');
+        try {
+            statusText.innerText = '接続中...';
+            joinButton.disabled = true;
 
-            // 1. SkyWayの初期化 (ここにAPIキーを入れる)
-            const context = await SkyWayContext.Create('YOUR_SKYWAY_API_KEY');
+            // 1. SkyWayの初期化
+            const context = await SkyWayContext.Create(appId);
 
-            // 2. 自分の映像と音声を取得
-            const { audio, video } = await SkyWayStreamFactory.createMicrophoneAudioAndCameraStream();
-            video.attach(localVideo);
+            // 2. マイク音声のみ取得（ビデオは取得しない）
+            const audioStream = await SkyWayStreamFactory.createMicrophoneAudioStream();
 
-            // 3. ルーム（P2P）に接続
+            // 3. ルームに入室
             const room = await SkyWayRoom.FindOrCreate(context, {
                 type: 'p2p',
-                name: roomNameInput.value,
+                name: roomName,
             });
             const me = await room.join();
+            statusText.innerText = '通話中: ' + roomName;
 
-            // 4. 自分の映像を相手に送る
-            await me.publish(audio);
-            await me.publish(video);
+            // 4. 自分の音声を公開
+            await me.publish(audioStream);
 
-            // 5. 相手の映像を受信する処理
+            // 5. 相手の音声を受信する処理
             const subscribe = async (publication) => {
-                if (publication.publisher.id === me.id) return;
-                const { stream } = await me.subscribe(publication.id);
+                if (publication.publisher.id === me.id) return; // 自分のは無視
                 
-                if (stream.contentType === 'video') {
-                    const remoteVideo = document.createElement('video');
-                    remoteVideo.autoplay = true;
-                    remoteVideo.playsinline = true;
-                    stream.attach(remoteVideo);
-                    videoContainer.appendChild(remoteVideo);
+                const { stream } = await me.subscribe(publication.id);
+                if (stream.contentType === 'audio') {
+                    // 音声を再生するための要素を作成
+                    const remoteAudio = document.createElement('audio');
+                    remoteAudio.autoplay = true;
+                    stream.attach(remoteAudio);
+                    remoteMediaArea.appendChild(remoteAudio);
                 }
             };
 
+            // すでにルームにいる人の音声を受け取る
             room.publications.forEach(subscribe);
+            // 後から入ってきた人の音声を受け取る
             room.onStreamPublished.add((e) => subscribe(e.publication));
-        };
-    </script>
+
+        } catch (error) {
+            console.error(error);
+            statusText.innerText = 'エラーが発生しました';
+            joinButton.disabled = false;
+        }
+    };
+</script>
 </body>
 </html>
