@@ -1,96 +1,62 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>最強の通話アプリ</title>
-    <script src="https://cdn.jsdelivr.net/npm/@skyway-sdk/room/dist/skyway_room.js"></script>
-    <style>
-        body { font-family: sans-serif; background: #f4f7f6; display: flex; justify-content: center; padding-top: 50px; }
-        .box { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); width: 320px; text-align: center; }
-        h3 { color: #333; margin-bottom: 20px; }
-        input { width: 90%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        button:disabled { background: #ccc; }
-        #status { margin-top: 15px; font-size: 13px; color: #888; }
-    </style>
+  <meta charset="UTF-8" />
+  <title>ブラウザ通話アプリ（デモ）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body { font-family: sans-serif; background:#0f172a; color:#e5e7eb; padding:20px }
+    h1 { font-size:1.4rem }
+    button { padding:10px 14px; margin:6px; border-radius:12px; border:none; cursor:pointer }
+    button:hover { opacity:0.9 }
+    .primary { background:#38bdf8; color:#020617 }
+    .danger { background:#fb7185; color:#020617 }
+    .card { background:#020617; padding:16px; border-radius:16px; max-width:420px }
+    video { width:100%; border-radius:12px; background:#000; margin-top:10px }
+    .note { font-size:0.9rem; opacity:0.85 }
+  </style>
 </head>
 <body>
+  <div class="card">
+    <h1>🎧 ブラウザ通話アプリ（1対1・超簡易）</h1>
+    <p class="note">※ 同じ部屋IDを2人で開くと音声通話できます</p>
 
-<div class="box">
-    <h3>音声通話ルーム</h3>
-    <input type="text" id="room-name" placeholder="部屋の名前を決めてね">
-    <button id="join-button">通話スタート！</button>
-    <p id="status">準備OK</p>
-    <div id="remote-media-area"></div>
-</div>
+    <input id="room" placeholder="部屋ID" style="padding:8px;border-radius:8px;border:none;width:100%" />
 
+    <div>
+      <button class="primary" onclick="startCall()">通話開始</button>
+      <button class="danger" onclick="endCall()">終了</button>
+    </div>
+
+    <video id="remote" autoplay playsinline></video>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/simple-peer@9/simplepeer.min.js"></script>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
-    const { SkyWayContext, SkyWayRoom, SkyWayStreamFactory } = SkyWay;
+  const socket = io('https://signal.simplepeerjs.com');
+  let peer;
 
-    // あなたのアプリケーションID
-    const appId = '1bb9fbdb-aa26-4350-a40e-7cc6429e1838';
+  async function startCall() {
+    const room = document.getElementById('room').value;
+    if (!room) return alert('部屋IDを入れてね');
 
-    const joinButton = document.getElementById('join-button');
-    const roomNameInput = document.getElementById('room-name');
-    const statusText = document.getElementById('status');
-    const remoteMediaArea = document.getElementById('remote-media-area');
+    const stream = await navigator.mediaDevices.getUserMedia({ audio:true, video:false });
 
-    joinButton.onclick = async () => {
-        const roomName = roomNameInput.value;
-        if (!roomName) return alert('部屋の名前を入れてね！');
+    peer = new SimplePeer({ initiator:true, trickle:false, stream });
 
-        try {
-            statusText.innerText = '接続を試みています...';
-            joinButton.disabled = true;
+    peer.on('signal', data => socket.emit('signal', { room, data }));
+    peer.on('stream', stream => {
+      document.getElementById('remote').srcObject = stream;
+    });
 
-            // --- ここで「設定なし」でも動くように初期化 ---
-            const context = await SkyWayContext.Create(appId);
+    socket.emit('join', room);
+    socket.on('signal', payload => peer.signal(payload.data));
+  }
 
-            // マイクをオンにする
-            const audioStream = await SkyWayStreamFactory.createMicrophoneAudioStream();
-
-            // 部屋に入る（P2Pモード）
-            const room = await SkyWayRoom.FindOrCreate(context, {
-                type: 'p2p',
-                name: roomName,
-            });
-            
-            const me = await room.join();
-            statusText.innerText = '通話中（部屋: ' + roomName + '）';
-            statusText.style.color = '#28a745';
-
-            // 自分の声を送信
-            await me.publish(audioStream);
-
-            // 相手の声が聞こえてきた時の処理
-            const subscribe = async (publication) => {
-                if (publication.publisher.id === me.id) return;
-                const { stream } = await me.subscribe(publication.id);
-                
-                if (stream.contentType === 'audio') {
-                    const remoteAudio = document.createElement('audio');
-                    remoteAudio.autoplay = true;
-                    stream.attach(remoteAudio);
-                    remoteMediaArea.appendChild(remoteAudio);
-                }
-            };
-
-            room.publications.forEach(subscribe);
-            room.onStreamPublished.add((e) => subscribe(e.publication));
-
-            // 相手が退出した時の処理
-            room.onMemberLeft.add(() => {
-                statusText.innerText = '相手が退出しました';
-            });
-
-        } catch (error) {
-            console.error(error);
-            statusText.innerText = 'エラー！マイク許可を忘れてない？';
-            statusText.style.color = 'red';
-            joinButton.disabled = false;
-        }
-    };
+  function endCall() {
+    if (peer) peer.destroy();
+  }
 </script>
 </body>
 </html>
