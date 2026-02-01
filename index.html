@@ -3,25 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>マイ電話番号固定</title>
+    <title>電話</title>
     <style>
-        /* デザインはiPhone風を維持 */
         * { -webkit-tap-highlight-color: transparent; outline: none; box-sizing: border-box; }
-        body { font-family: -apple-system, sans-serif; background: #ffffff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
+        body { font-family: -apple-system, sans-serif; background: #ffffff; color: #333; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
         #bg-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?fit=crop&w=1200&q=80') center/cover; filter: blur(20px) brightness(0.7); z-index: -1; opacity: 0; transition: 0.8s; }
-        .phone-container { width: 350px; height: 650px; background: #fff; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.1); border-radius: 30px; display: flex; flex-direction: column; overflow: hidden; }
-        .main-content { flex: 1; display: flex; flex-direction: column; justify-content: space-between; padding: 50px 20px 30px; }
-        #numberDisplay { width: 100%; border: none; background: transparent; font-size: 32px; font-weight: 300; text-align: center; color: #000; }
-        .status { font-size: 14px; color: #007aff; margin-top: 5px; height: 20px; text-align: center; }
+        .phone-container { width: 350px; height: 650px; background: #fff; position: relative; border-radius: 40px; box-shadow: 0 0 30px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden; }
+        .main-content { flex: 1; display: flex; flex-direction: column; justify-content: space-between; padding: 60px 20px 40px; }
+        .display-area { text-align: center; }
+        #numberDisplay { width: 100%; border: none; background: transparent; font-size: 34px; font-weight: 300; text-align: center; color: #000; letter-spacing: 1px; }
+        .status { font-size: 15px; color: #007aff; margin-top: 8px; font-weight: 500; height: 20px; }
         .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
-        .key { width: 70px; height: 70px; background: #f2f2f7; border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; margin: auto; }
+        .key { width: 75px; height: 75px; background: #f2f2f7; border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; margin: auto; }
         .key:active { background: #d1d1d6; }
-        .key .num { font-size: 28px; }
-        .bottom-controls { display: flex; justify-content: center; align-items: center; min-height: 80px; position: relative; }
-        .btn-call { width: 70px; height: 70px; background: #28a745; border-radius: 50%; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center; }
-        .btn-hangup { width: 70px; height: 70px; background: #ff3b30; border-radius: 50%; border: none; cursor: pointer; display: none; justify-content: center; align-items: center; }
-        .btn-backspace { position: absolute; right: 10px; background: none; border: none; font-size: 20px; color: #999; cursor: pointer; }
-        .set-number-btn { color: #007aff; border: none; background: none; font-size: 14px; margin-top: 10px; cursor: pointer; font-weight: bold; }
+        .key .num { font-size: 32px; line-height: 1; }
+        .bottom-controls { display: flex; justify-content: center; align-items: center; min-height: 100px; position: relative; }
+        .btn-call { width: 75px; height: 75px; background: #28a745; border-radius: 50%; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center; }
+        .btn-hangup { width: 75px; height: 75px; background: #ff3b30; border-radius: 50%; border: none; cursor: pointer; display: none; justify-content: center; align-items: center; }
+        .btn-backspace { position: absolute; right: 20px; background: none; border: none; font-size: 24px; color: #999; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -30,9 +29,8 @@
 <div class="phone-container">
     <div class="main-content">
         <div class="display-area">
-            <input type="tel" id="numberDisplay" placeholder="番号を入力" readonly>
-            <div class="status" id="status">マイ番号を登録してください</div>
-            <button class="set-number-btn" onclick="savePermanentNumber()">この番号を自分の固定番号にする</button>
+            <input type="tel" id="numberDisplay" placeholder="" readonly>
+            <div class="status" id="status">準備中...</div>
         </div>
 
         <div id="dialerUI">
@@ -53,54 +51,122 @@
         </div>
 
         <div class="bottom-controls">
-            <button class="btn-call" id="callBtn" onclick="startCall()">
-                <svg width="30" height="30" fill="white" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+            <button class="btn-call" id="callBtn" onclick="call()">
+                <svg width="35" height="35" fill="white" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
             </button>
-            <button class="btn-hangup" id="hangupBtn" onclick="endCall()">
-                <svg width="30" height="30" fill="white" viewBox="0 0 24 24"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
+            <button class="btn-hangup" id="hangupBtn" onclick="hangup()">
+                <svg width="35" height="35" fill="white" viewBox="0 0 24 24"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
             </button>
-            <button class="btn-backspace" onclick="backspace()">⌫</button>
+            <button class="btn-backspace" id="backspaceBtn" onclick="backspace()">⌫</button>
         </div>
     </div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+
 <script>
+    const firebaseConfig = { apiKey: "AIzaSyBaMe4Cz_3W75F5NCtioAguONgukg3-k0g", authDomain: "my-call-14d70.firebaseapp.com", projectId: "my-call-14d70", storageBucket: "my-call-14d70.firebasestorage.app", messagingSenderId: "769393584037", appId: "1:769393584037:web:279aa04477f2649230ea4c" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
     const display = document.getElementById('numberDisplay');
     const statusEl = document.getElementById('status');
+    let MY_NUMBER = "";
+    let localStream, pc;
 
-    // 🌟 ページ読み込み時に保存された番号があるか確認
+    // 🌟 起動時にブラウザ固有の番号を読み込む/作成する
     window.onload = () => {
-        const savedNumber = localStorage.getItem('myPermanentNumber');
-        if (savedNumber) {
-            display.value = savedNumber;
-            statusEl.innerText = "マイ番号で待受中: " + savedNumber;
-            // ここで自動的にFirebaseの待受を開始するロジックを呼ぶ
-            // startWaiting(savedNumber);
+        let savedNum = localStorage.getItem('my_fixed_number');
+        if (!savedNum) {
+            savedNum = "080-" + Math.floor(1000+Math.random()*9000) + "-" + Math.floor(1000+Math.random()*9000);
+            localStorage.setItem('my_fixed_number', savedNum);
         }
+        MY_NUMBER = savedNum;
+        statusEl.innerText = "マイ番号: " + MY_NUMBER;
+        startWaiting();
     };
 
-    // 🌟 今入力されている番号（080...等）を固定番号として保存する
-    function savePermanentNumber() {
-        const currentNum = display.value;
-        if (currentNum.length < 5) {
-            alert("正しい番号を入力してください");
-            return;
-        }
-        localStorage.setItem('myPermanentNumber', currentNum);
-        statusEl.innerText = "マイ番号を固定しました: " + currentNum;
-        alert("このブラウザでの固定番号を " + currentNum + " に設定しました！");
+    function press(n) {
+        let val = display.value.replace(/-/g, "") + n;
+        if (val.length > 3 && val.length <= 7) val = val.slice(0, 3) + "-" + val.slice(3);
+        else if (val.length > 7) val = val.slice(0, 3) + "-" + val.slice(3, 7) + "-" + val.slice(7, 11);
+        display.value = val;
     }
 
-    function press(n) { display.value += n; }
-    function backspace() { display.value = display.value.slice(0, -1); }
-
-    function startCall() {
-        // Firebaseの発信ロジック
+    function backspace() {
+        let val = display.value.replace(/-/g, "").slice(0, -1);
+        display.value = "";
+        for(let char of val) press(char);
     }
 
-    function endCall() {
-        // Firebaseの終了ロジック
+    async function startWaiting() {
+        const roomRef = db.collection('rooms').doc(MY_NUMBER);
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+        localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        await roomRef.set({ offer: { type: offer.type, sdp: offer.sdp } });
+
+        pc.onicecandidate = e => e.candidate && roomRef.collection('callerCandidates').add(e.candidate.toJSON());
+        pc.ontrack = e => {
+            const remoteAudio = new Audio();
+            remoteAudio.srcObject = e.streams[0];
+            remoteAudio.play();
+            statusEl.innerText = "通話中...";
+            toggleUI(true);
+        };
+
+        roomRef.onSnapshot(async snap => {
+            const data = snap.data();
+            if (!pc.currentRemoteDescription && data?.answer) {
+                await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+            }
+        });
     }
+
+    async function call() {
+        const target = display.value;
+        if (!target) return;
+        statusEl.innerText = target + " へ発信中...";
+        const roomRef = db.collection('rooms').doc(target);
+        const snap = await roomRef.get();
+        if (!snap.exists) { alert("相手が見つかりません"); return; }
+
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+        localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+        pc.onicecandidate = e => e.candidate && roomRef.collection('calleeCandidates').add(e.candidate.toJSON());
+        pc.ontrack = e => {
+            const remoteAudio = new Audio();
+            remoteAudio.srcObject = e.streams[0];
+            remoteAudio.play();
+            statusEl.innerText = "通話中...";
+            toggleUI(true);
+        };
+
+        await pc.setRemoteDescription(new RTCSessionDescription(snap.data().offer));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        await roomRef.update({ answer });
+
+        roomRef.collection('callerCandidates').onSnapshot(s => {
+            s.docChanges().forEach(c => { if (c.type === 'added') pc.addIceCandidate(new RTCIceCandidate(c.doc.data())); });
+        });
+    }
+
+    function toggleUI(inCall) {
+        document.getElementById('dialerUI').style.display = inCall ? 'none' : 'block';
+        document.getElementById('callBtn').style.display = inCall ? 'none' : 'flex';
+        document.getElementById('hangupBtn').style.display = inCall ? 'flex' : 'none';
+        document.getElementById('backspaceBtn').style.display = inCall ? 'none' : 'block';
+        document.getElementById('bg-overlay').style.opacity = inCall ? "1" : "0";
+    }
+
+    function hangup() { location.reload(); }
 </script>
 </body>
 </html>
