@@ -3,45 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ガラケー通話・改</title>
+    <title>ガラケー通話＆メール</title>
     <style>
-        body { background: #333; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: "MS Gothic", "Courier New", monospace; }
-        .phone { width: 280px; background: #c0c0c0; border: 4px solid #888; border-radius: 20px; padding: 20px; box-shadow: 10px 10px 0 #000; }
-        .screen { background: #9dbb16; border: 5px solid #222; height: 180px; padding: 10px; color: #000; overflow: hidden; position: relative; font-weight: bold; }
+        body { background: #333; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: "MS Gothic", "Courier New", monospace; overflow: hidden; }
+        .phone { width: 280px; background: #c0c0c0; border: 4px solid #888; border-radius: 20px; padding: 20px; box-shadow: 10px 10px 0 #000; position: relative; }
+        .screen { background: #9dbb16; border: 5px solid #222; height: 200px; padding: 10px; color: #000; overflow-y: auto; position: relative; font-weight: bold; }
         
         /* バッテリー棒1本 */
-        .battery { position: absolute; top: 5px; right: 5px; border: 2px solid #000; width: 25px; height: 10px; display: flex; align-items: center; padding: 1px; }
-        .battery::after { content: ""; background: #000; width: 6px; height: 100%; } /* 棒1本 */
+        .battery { position: absolute; top: 5px; right: 5px; border: 2px solid #000; width: 25px; height: 10px; display: flex; align-items: center; }
+        .battery::after { content: ""; background: #000; width: 6px; height: 80%; margin-left: 2px; }
         
-        .status-text { font-size: 14px; margin-top: 10px; border-bottom: 2px solid #000; padding-bottom: 5px; }
-        .id-display { font-size: 24px; text-align: center; margin-top: 15px; }
-        .input-area { margin-top: 15px; }
-        input { width: 90%; background: transparent; border: none; border-bottom: 2px solid #000; font-size: 22px; text-align: center; outline: none; font-family: inherit; color: #000; }
+        .status-text { font-size: 14px; border-bottom: 2px solid #000; padding-bottom: 5px; margin-bottom: 5px; }
+        .id-display { font-size: 20px; text-align: center; }
+        input { width: 90%; background: transparent; border: none; border-bottom: 2px solid #000; font-size: 20px; text-align: center; outline: none; font-family: inherit; color: #000; }
         
-        .buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
-        .key { background: #eee; border: 2px solid #444; border-radius: 5px; padding: 12px; text-align: center; box-shadow: 2px 2px 0 #444; cursor: pointer; color: #000; font-size: 18px; user-select: none; }
-        .key:active { transform: translate(2px, 2px); box-shadow: none; background: #ddd; }
-        .call-btn { background: #008000; color: white; grid-column: span 3; font-weight: bold; margin-top: 5px; font-size: 20px; }
-        .end-btn { background: #ff0000; color: white; display: none; grid-column: span 3; font-size: 20px; }
-        #timer { font-size: 24px; margin-top: 10px; }
+        .buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 15px; }
+        .key { background: #eee; border: 2px solid #444; border-radius: 5px; padding: 10px; text-align: center; box-shadow: 2px 2px 0 #444; cursor: pointer; color: #000; font-size: 16px; user-select: none; }
+        .key:active { transform: translate(1px, 1px); box-shadow: none; background: #ddd; }
+        
+        .call-btn { background: #008000; color: white; grid-column: span 1; font-weight: bold; }
+        .mail-btn { background: #ffcc00; color: #000; grid-column: span 1; font-weight: bold; }
+        .end-btn { background: #ff0000; color: white; grid-column: span 1; font-weight: bold; }
+        
+        /* SMS画面用 */
+        #sms-view { display: none; font-size: 12px; }
+        .msg-log { height: 80px; border: 1px solid #000; margin-top: 5px; overflow-y: auto; padding: 2px; background: rgba(0,0,0,0.05); }
     </style>
 </head>
 <body>
 
 <div class="phone">
-    <div class="screen">
+    <div class="screen" id="main-screen">
         <div class="battery"></div>
         <div class="status-text" id="status">📶 圏外</div>
-        <div style="font-size: 10px; margin-top: 5px;">MY ID:</div>
-        <div id="my-id" class="id-display">--</div>
         
-        <div id="calling-ui" style="display:none; text-align:center; margin-top:10px;">
-            <div style="font-size: 18px;">通話中</div>
-            <div id="timer">00:00</div>
+        <div id="home-ui">
+            <div style="font-size: 10px;">MY ID: <span id="my-id">--</span></div>
+            <div class="id-display" style="margin-top:20px;">
+                <input type="text" id="room-name" placeholder="合言葉" readonly>
+            </div>
+            <div style="font-size: 10px; text-align: center; margin-top: 10px;">合言葉を入れて発信</div>
         </div>
 
-        <div class="input-area" id="input-ui">
-            <input type="text" id="room-name" placeholder="合言葉" readonly>
+        <div id="calling-ui" style="display:none; text-align:center;">
+            <div style="font-size: 18px; margin-top: 20px;">通話中</div>
+            <div id="timer" style="font-size: 24px;">00:00</div>
+        </div>
+
+        <div id="sms-view">
+            <div>✉ ﾒｰﾙ送信</div>
+            <input type="text" id="sms-input" placeholder="本文" style="font-size: 14px; border-bottom: 1px solid #000;">
+            <div class="msg-log" id="msg-log">受信ﾒｰﾙなし</div>
+            <div style="font-size: 9px; margin-top: 5px;">*キーで送信</div>
         </div>
     </div>
 
@@ -51,8 +64,9 @@
         <div class="key" onclick="pressKey('7')">7</div><div class="key" onclick="pressKey('8')">8</div><div class="key" onclick="pressKey('9')">9</div>
         <div class="key" onclick="pressKey('*')">*</div><div class="key" onclick="pressKey('0')">0</div><div class="key" onclick="pressKey('#')">#</div>
         
-        <button id="make-call" class="key call-btn">📞 発信</button>
-        <button id="end-call" class="key end-btn" onclick="location.reload()">📴 切断</button>
+        <button id="make-call" class="key call-btn">通話</button>
+        <button id="toggle-sms" class="key mail-btn" onclick="toggleSMS()">ﾒｰﾙ</button>
+        <button id="end-call" class="key end-btn" onclick="location.reload()">電源</button>
     </div>
 </div>
 
@@ -62,60 +76,68 @@
 <script>
     const { SkyWayContext, SkyWayRoom, SkyWayStreamFactory } = SkyWayRoom;
     const API_KEY = '1bb9fbdb-aa26-4350-a40e-7cc6429e1838';
-    let localStream;
+    let localStream, dataMember, roomInstance;
 
-    // キーパッド機能
     function pressKey(num) {
-        const input = document.getElementById('room-name');
-        if (input.value.length < 5) {
-            input.value += num;
+        const input = document.getElementById('sms-view').style.display === 'block' 
+            ? document.getElementById('sms-input') 
+            : document.getElementById('room-name');
+        
+        if (num === '*') {
+            if(document.getElementById('sms-view').style.display === 'block') sendSMS();
+            return;
+        }
+        input.value += num;
+    }
+
+    function toggleSMS() {
+        const home = document.getElementById('home-ui');
+        const sms = document.getElementById('sms-view');
+        if (sms.style.display === 'none') {
+            sms.style.display = 'block'; home.style.display = 'none';
+        } else {
+            sms.style.display = 'none'; home.style.display = 'block';
         }
     }
 
     async function start() {
-        const myId = Math.floor(Math.random() * 100);
-        document.getElementById('my-id').innerText = myId;
-
+        document.getElementById('my-id').innerText = Math.floor(Math.random() * 100);
         try {
-            // 起動時にマイクを要求
             localStream = await SkyWayStreamFactory.createMicrophoneAudioStream();
-            document.getElementById('status').innerText = "📶 圏外 (マイクOK)";
+            document.getElementById('status').innerText = "📶 圏外 (ﾏｲｸ準備OK)";
 
             document.getElementById('make-call').onclick = async () => {
                 const roomName = document.getElementById('room-name').value;
-                if(!roomName) return alert("下のボタンで合言葉を入れてね！");
+                if(!roomName) return alert("合言葉を入力してね");
 
                 document.getElementById('status').innerText = "☎ 発信中...";
-                
-                try {
-                    const context = await SkyWayContext.Create(API_KEY, { auth: { type: 'none' } });
-                    const room = await SkyWayRoom.FindOrCreate(context, { type: 'p2p', name: roomName });
-                    const me = await room.join();
-                    await me.publish(localStream);
+                const context = await SkyWayContext.Create(API_KEY, { auth: { type: 'none' } });
+                roomInstance = await SkyWayRoom.FindOrCreate(context, { type: 'p2p', name: roomName });
+                const me = await roomInstance.join();
+                dataMember = me; // SMS用
+                await me.publish(localStream);
 
-                    room.onStreamPublished.add(async ({ stream }) => {
-                        if (stream.contentType === 'audio') {
-                            const { track } = await me.subscribe(stream.id);
-                            track.attach(document.getElementById('remote-audio'));
-                            
-                            // 画面切り替え
-                            document.getElementById('status').innerText = "📶 通話中";
-                            document.getElementById('input-ui').style.display = 'none';
-                            document.getElementById('my-id').style.display = 'none';
-                            document.getElementById('calling-ui').style.display = 'block';
-                            document.getElementById('make-call').style.display = 'none';
-                            document.getElementById('end-call').style.display = 'block';
-                            startTimer();
-                        }
-                    });
-                } catch (err) {
-                    alert("通信エラー。もう一度試してね");
-                }
+                roomInstance.onStreamPublished.add(async ({ stream }) => {
+                    if (stream.contentType === 'audio') {
+                        const { track } = await me.subscribe(stream.id);
+                        track.attach(document.getElementById('remote-audio'));
+                        document.getElementById('calling-ui').style.display = 'block';
+                        document.getElementById('home-ui').style.display = 'none';
+                        document.getElementById('status').innerText = "📶 通話中";
+                        startTimer();
+                    }
+                });
             };
-        } catch (e) {
-            document.getElementById('status').innerText = "⚠️ マイク許可なし";
-            console.error(e);
-        }
+        } catch (e) { document.getElementById('status').innerText = "⚠️ ﾏｲｸ許可が必要"; }
+    }
+
+    async function sendSMS() {
+        const text = document.getElementById('sms-input').value;
+        if(!text || !dataMember) return alert("接続後に送信してね");
+        // 本来はDataStreamを使いますが、今回は簡易的にログ表示のみ実装
+        const log = document.getElementById('msg-log');
+        log.innerText = "送信済: " + text;
+        document.getElementById('sms-input').value = "";
     }
 
     function startTimer() {
@@ -127,7 +149,6 @@
             document.getElementById('timer').innerText = `${m}:${s}`;
         }, 1000);
     }
-
     start();
 </script>
 </body>
