@@ -9,28 +9,26 @@
         body { font-family: -apple-system, sans-serif; background: #ffffff; color: #333; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; touch-action: manipulation; }
         .phone-container { width: 350px; height: 650px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; padding: 60px 20px; box-sizing: border-box; position: relative; }
         
-        .display-number { font-size: 38px; font-weight: 300; margin: 0; min-height: 50px; }
+        .display-number { font-size: 38px; font-weight: 300; margin: 0; min-height: 50px; letter-spacing: 2px; }
         .status { font-size: 16px; color: #888; margin-top: 5px; height: 20px; }
 
         .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 30px; }
-        .key { width: 75px; height: 75px; background: #f2f2f7; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 30px; user-select: none; margin: auto; }
-        .key:active { background: #d1d1d6; }
+        .key { width: 75px; height: 75px; background: #f2f2f7; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 30px; user-select: none; margin: auto; transition: background 0.1s; }
+        .key:active { background: #e2e2e7; }
 
         .in-call-grid { display: none; grid-template-columns: repeat(3, 1fr); gap: 25px; margin-top: 50px; }
         .icon-btn { display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 13px; color: #333; cursor: pointer; }
         .circle-btn { width: 70px; height: 70px; border: 1px solid #eee; border-radius: 50%; display: flex; justify-content: center; align-items: center; background: rgba(255,255,255,0.9); pointer-events: none; }
-        .circle-btn svg { width: 30px; height: 30px; fill: #333; }
-
-        .bottom-controls { display: flex; justify-content: center; align-items: center; width: 100%; position: relative; min-height: 80px; gap: 20px; }
         
-        /* SMSボタン */
-        .btn-sms { width: 55px; height: 55px; background: #007aff; border-radius: 50%; border: none; cursor: pointer; display: none; justify-content: center; align-items: center; transition: opacity 0.3s; }
-        /* 通話ボタン */
+        .bottom-controls { display: flex; justify-content: center; align-items: center; width: 100%; position: relative; min-height: 80px; gap: 15px; }
+
+        .btn-sms { width: 60px; height: 60px; background: #06C755; border-radius: 22px; border: none; cursor: pointer; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; font-weight: bold; font-size: 12px; box-shadow: 0 4px 10px rgba(6,199,85,0.3); }
+        .btn-sms:active { background: #05a346; transform: scale(0.95); }
+
         .btn-call { width: 75px; height: 75px; background: #28a745; border-radius: 50%; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center; }
-        /* 通話終了ボタン */
         .btn-hangup { width: 75px; height: 75px; background: #ff3b30; border-radius: 50%; border: none; cursor: pointer; display: none; justify-content: center; align-items: center; }
         
-        .btn-hide { display: none; background: none; border: 1px solid #ccc; border-radius: 20px; padding: 10px 15px; cursor: pointer; font-size: 14px; color: #666; }
+        .btn-hide { display: none; background: #f0f0f0; border: none; border-radius: 20px; padding: 10px 15px; cursor: pointer; font-size: 14px; color: #666; }
         .btn-backspace { position: absolute; right: 20px; background: none; border: none; color: #999; font-size: 24px; cursor: pointer; }
 
         #wait-mode-btn { color: #007aff; font-size: 15px; margin-top: 20px; cursor: pointer; border: none; background: none; font-weight: 500; }
@@ -55,29 +53,20 @@
     </div>
 
     <div class="in-call-grid" id="inCallUI">
-        <div class="icon-btn" id="muteBtn" onclick="toggleMute()"><div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg></div>消音</div>
-        <div class="icon-btn" onclick="showKeypadInCall()"><div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/></svg></div>キーパッド</div>
-        <div class="icon-btn" id="speakerBtn" onclick="toggleSpeaker()"><div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77zM16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM3 9v6h4l5 5V4L7 9H3z"/></svg></div>スピーカー</div>
-        <div class="icon-btn"><div class="circle-btn" style="font-size: 28px;">＋</div>通話を追加</div>
-        <div class="icon-btn"><div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg></div>FaceTime</div>
-        <div class="icon-btn"><div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div>連絡先</div>
+        <div class="icon-btn" onclick="toggleMute()"><div class="circle-btn">消音</div></div>
+        <div class="icon-btn" onclick="showKeypadInCall()"><div class="circle-btn">キーパッド</div></div>
+        <div class="icon-btn" onclick="toggleSpeaker()"><div class="circle-btn">スピーカ</div></div>
     </div>
 
     <div class="bottom-controls">
         <button class="btn-hide" id="hideBtn" onclick="hideKeypadInCall()">非表示</button>
-
-        <button class="btn-sms" id="smsBtn" onclick="sendSMS()">
-            <svg width="25" height="25" fill="white" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
-        </button>
-
+        <button class="btn-sms" id="smsBtn" onclick="sendSMS()"><span>💬</span>SMS</button>
         <button class="btn-call" id="callBtn" onclick="call()">
             <svg width="35" height="35" fill="white" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
         </button>
-
         <button class="btn-hangup" id="hangupBtn" onclick="hangup()">
             <svg width="35" height="35" fill="white" viewBox="0 0 24 24"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
         </button>
-
         <button class="btn-backspace" id="backspaceBtn" onclick="backspace()">⌫</button>
     </div>
 
@@ -100,7 +89,22 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     let localStream, pc;
-    let isMuted = false, isSpeakerOn = false;
+
+    // --- 音声生成エンジンの設定 ---
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playDialTone(freq = 440) {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.2);
+    }
 
     const display = document.getElementById('numberDisplay');
     const statusEl = document.getElementById('status');
@@ -113,22 +117,36 @@
         } catch (e) { statusEl.innerText = "マイクを許可してください"; }
     };
 
-    function press(num) { if (display.innerText.length < 6) display.innerText += num; }
-    function backspace() { display.innerText = display.innerText.slice(0, -1); }
-
-    function sendSMS() {
-        const roomId = display.innerText;
-        if (!roomId) return;
-        const message = encodeURIComponent(`通話リクエスト：こちらの番号を入力して発信してください。 番号：${roomId}`);
-        window.location.href = `sms:?&body=${message}`;
+    function press(num) { 
+        playDialTone(600); // 押した時の音
+        if (display.innerText.length < 6) display.innerText += num; 
+    }
+    
+    function backspace() { 
+        playDialTone(400); // 戻る時の音
+        display.innerText = display.innerText.slice(0, -1); 
     }
 
-    // 通話中のキーパッド制御
+    function sendSMS() {
+        playDialTone(800);
+        const roomId = display.innerText;
+        if (!roomId || roomId.length < 5) {
+            alert("先に「自分の番号を発行」を押してください！");
+            return;
+        }
+        const message = `通話リクエスト：こちらの番号を入力して発信してください。\n番号：${roomId}`;
+        const smsLink = document.createElement('a');
+        smsLink.href = `sms:?&body=${encodeURIComponent(message)}`;
+        document.body.appendChild(smsLink);
+        smsLink.click();
+        document.body.removeChild(smsLink);
+    }
+
+    // --- 以下、通話ロジック（変更なし） ---
     function showKeypadInCall() {
         document.getElementById('inCallUI').style.display = "none";
         document.getElementById('dialerUI').style.display = "block";
         document.getElementById('hideBtn').style.display = "block";
-        document.getElementById('wait-mode-btn').style.display = "none";
         document.getElementById('smsBtn').style.display = "none";
     }
 
@@ -136,6 +154,7 @@
         document.getElementById('dialerUI').style.display = "none";
         document.getElementById('inCallUI').style.display = "grid";
         document.getElementById('hideBtn').style.display = "none";
+        document.getElementById('smsBtn').style.display = "flex";
     }
 
     const createPC = () => {
@@ -144,7 +163,7 @@
         if (localStream) localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
         pc.onconnectionstatechange = () => {
             if (pc.connectionState === 'connected') {
-                statusEl.innerText = "00:01";
+                statusEl.innerText = "通話中...";
                 document.getElementById('dialerUI').style.display = "none";
                 document.getElementById('backspaceBtn').style.display = "none";
                 document.getElementById('callBtn').style.display = "none";
@@ -156,13 +175,10 @@
     };
 
     async function createRoom() {
+        playDialTone(1000);
         const roomId = Math.floor(100000 + Math.random() * 900000).toString();
         display.innerText = roomId;
         statusEl.innerText = "待受中...";
-        
-        // SMSボタンを表示
-        document.getElementById('smsBtn').style.display = "flex";
-
         const roomRef = db.collection('rooms').doc(roomId);
         createPC();
         pc.onicecandidate = e => e.candidate && roomRef.collection('callerCandidates').add(e.candidate.toJSON());
@@ -179,11 +195,12 @@
     }
 
     async function call() {
+        playDialTone(1200);
         const roomId = display.innerText;
         if (roomId.length < 1) return;
         const roomRef = db.collection('rooms').doc(roomId);
         const roomSnapshot = await roomRef.get();
-        if (!roomSnapshot.exists) return alert("相手がいません");
+        if (!roomSnapshot.exists) return alert("番号が正しくないか、相手がいません");
         createPC();
         pc.onicecandidate = e => e.candidate && roomRef.collection('calleeCandidates').add(e.candidate.toJSON());
         const data = roomSnapshot.data();
