@@ -3,31 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>最強ガラケー通話機</title>
+    <title>ガラケー・究極完全体</title>
     <style>
         body { background: #333; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: "MS Gothic", "Courier New", monospace; color: #000; overflow: hidden; }
-        .phone { width: 300px; background: #c0c0c0; border: 4px solid #888; border-radius: 20px; padding: 20px; box-shadow: 10px 10px 0 #000; }
-        .screen { background: #9dbb16; border: 5px solid #222; height: 240px; padding: 10px; position: relative; font-weight: bold; display: flex; flex-direction: column; }
+        .phone { width: 320px; background: #c0c0c0; border: 4px solid #888; border-radius: 20px; padding: 20px; box-shadow: 10px 10px 0 #000; }
+        .screen { background: #9dbb16; border: 5px solid #222; height: 260px; padding: 10px; position: relative; font-weight: bold; display: flex; flex-direction: column; box-sizing: border-box; }
         
-        .battery { position: absolute; top: 5px; right: 5px; border: 2px solid #000; width: 25px; height: 10px; display: flex; align-items: center; }
-        .battery::after { content: ""; background: #000; width: 6px; height: 80%; margin-left: 2px; }
+        /* 画面上部 */
+        .status-bar { font-size: 12px; border-bottom: 2px solid #000; padding-bottom: 3px; display: flex; justify-content: space-between; }
+        .battery { border: 2px solid #000; width: 22px; height: 9px; display: flex; align-items: center; padding: 1px; }
+        .battery::after { content: ""; background: #000; width: 6px; height: 100%; }
+
+        /* アプリ画面切り替え */
+        .app-layer { flex-grow: 1; display: none; text-align: center; justify-content: center; flex-direction: column; }
+        .active { display: flex; }
+
+        /* SMSアプリのデザイン */
+        .sms-app { font-size: 12px; text-align: left; }
+        .sms-log { border: 1px solid #000; height: 100px; margin: 5px 0; overflow-y: auto; background: rgba(0,0,0,0.05); padding: 2px; }
+
+        /* 入力欄 */
+        input { width: 100%; background: transparent; border: none; font-size: 20px; text-align: center; outline: none; color: #000; border-bottom: 1px solid #000; }
+
+        /* キーパッド（操作キー実装） */
+        .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 10px; }
+        .key { background: #eee; border: 2px solid #444; border-radius: 5px; padding: 12px 5px; text-align: center; box-shadow: 2px 2px 0 #444; font-size: 14px; cursor: pointer; user-select: none; }
+        .key:active { transform: translate(1px, 1px); box-shadow: none; }
         
-        .status-bar { font-size: 12px; border-bottom: 2px solid #000; padding-bottom: 3px; margin-bottom: 5px; display: flex; justify-content: space-between; }
-        .display-area { flex-grow: 1; text-align: center; display: flex; flex-direction: column; justify-content: center; }
-        
-        .sms-panel { border: 1px dashed #000; font-size: 11px; padding: 3px; margin-top: 5px; background: rgba(0,0,0,0.05); text-align: left; }
-        
-        input { width: 100%; background: transparent; border: none; font-size: 24px; text-align: center; outline: none; font-family: inherit; margin: 10px 0; }
-        
-        .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 15px; }
-        .key { background: #eee; border: 2px solid #444; border-radius: 5px; padding: 10px; text-align: center; box-shadow: 2px 2px 0 #444; font-size: 14px; color: #000; font-weight: bold; }
-        
-        /* ボタン色分け */
-        .call-btn { background: #2ecc71; color: white; } /* 通話に出る */
-        .end-btn { background: #e74c3c; color: white; }  /* 切る */
-        .mail-btn { background: #f1c40f; }             /* メール */
-        
-        .info { font-size: 9px; margin-top: 5px; color: #444; }
+        /* 操作用キー */
+        .op-key { background: #ddd; font-weight: bold; }
+        .call-key { background: #2ecc71; color: white; }
+        .end-key { background: #e74c3c; color: white; }
     </style>
 </head>
 <body>
@@ -35,31 +41,41 @@
 <div class="phone">
     <div class="screen">
         <div class="status-bar">
-            <div id="status">📶圏外</div>
+            <div id="signal">📶圏外</div>
+            <div id="app-title">電話</div>
             <div class="battery"></div>
         </div>
 
-        <div class="display-area" id="screen-content">
+        <div id="app-phone" class="app-layer active">
             <div style="font-size: 10px;">ID: <span id="my-id">--</span></div>
-            <input type="text" id="phone-number" placeholder="番号入力" readonly>
-            <div id="call-state" style="font-size: 18px; display:none;">通話中... <span id="timer">00:00</span></div>
-            
-            <div class="sms-panel">
-                【新着ﾒｰﾙ】
-                <div id="sms-display">なし</div>
+            <input type="text" id="phone-num" placeholder="番号入力" readonly>
+            <div id="calling-status" style="display:none; margin-top:10px;">
+                通話中<br><span id="timer" style="font-size:24px;">00:00</span>
             </div>
         </div>
-        <div class="info">←→でﾒｰﾙ/電話切替 ※PC矢印ｷｰ対応</div>
+
+        <div id="app-sms" class="app-layer">
+            <div class="sms-app">
+                【✉ ﾒｰﾙ作成】
+                <input type="text" id="sms-text" placeholder="本文入力" readonly>
+                <div class="sms-log" id="sms-log">受信ﾒｰﾙはありません</div>
+            </div>
+        </div>
     </div>
 
     <div class="keypad">
-        <div class="key">1</div><div class="key">2</div><div class="key">3</div>
-        <div class="key">4</div><div class="key">5</div><div class="key">6</div>
-        <div class="key">7</div><div class="key">8</div><div class="key">9</div>
-        <button class="key mail-btn" id="btn-mail">✉</button><div class="key">0</div><div class="key">#</div>
-        <button class="key call-btn" id="btn-call">📞通話</button>
-        <div class="key">決定</div>
-        <button class="key end-btn" id="btn-end">📴切断</button>
+        <div class="key op-key" onclick="switchApp('phone')">電話</div>
+        <div class="key op-key" onclick="switchApp('sms')">ﾒｰﾙ</div>
+        <div class="key op-key" onclick="deleteChar()">消去</div>
+
+        <div class="key" onclick="pressNum('1')">1</div><div class="key" onclick="pressNum('2')">2</div><div class="key" onclick="pressNum('3')">3</div>
+        <div class="key" onclick="pressNum('4')">4</div><div class="key" onclick="pressNum('5')">5</div><div class="key" onclick="pressNum('6')">6</div>
+        <div class="key" onclick="pressNum('7')">7</div><div class="key" onclick="pressNum('8')">8</div><div class="key" onclick="pressNum('9')">9</div>
+        <div class="key" onclick="pressNum('*')">＊</div><div class="key" onclick="pressNum('0')">0</div><div class="key" onclick="sendAction()">＃</div>
+
+        <div class="key call-key" onclick="startCall()">📞発信</div>
+        <div class="key op-key">決定</div>
+        <div class="key end-key" onclick="location.reload()">📴切断</div>
     </div>
 </div>
 
@@ -69,59 +85,80 @@
 <script>
     const { SkyWayContext, SkyWayRoom, SkyWayStreamFactory } = SkyWayRoom;
     const API_KEY = '1bb9fbdb-aa26-4350-a40e-7cc6429e1838';
-    let localStream, room, me, context;
+    let localStream, currentApp = 'phone';
 
-    // --- PCキーボード操作 ---
-    window.addEventListener('keydown', (e) => {
-        const input = document.getElementById('phone-number');
-        if (e.key >= '0' && e.key <= '9') input.value += e.key;
-        if (e.key === 'Backspace') input.value = input.value.slice(0, -1);
-        if (e.key === 'Enter') startCall();      // Enterで通話
-        if (e.key === 'Escape') location.reload(); // Escで切断
-        if (e.key === 'ArrowRight') document.getElementById('sms-display').innerText = "ﾒｰﾙ画面へ切替..."; 
-    });
-
-    async function setup() {
-        document.getElementById('my-id').innerText = Math.floor(Math.random() * 1000);
+    // 1. マイク許可を最初に確実に求める
+    async function init() {
+        document.getElementById('my-id').innerText = Math.floor(Math.random() * 999);
         try {
             localStream = await SkyWayStreamFactory.createMicrophoneAudioStream();
-            document.getElementById('status').innerText = "📶準備完了";
+            document.getElementById('signal').innerText = "📶良好";
+            alert("マイクの使用を許可しました。通話が可能です。");
         } catch (e) {
-            document.getElementById('status').innerText = "⚠️ﾏｲｸ許可!";
+            alert("マイクを許可してください！許可しないと通話できません。");
+            document.getElementById('signal').innerText = "⚠️停止";
         }
     }
 
-    async function startCall() {
-        const num = document.getElementById('phone-number').value;
-        if (!num) return alert("番号を入力してください");
-
-        document.getElementById('status').innerText = "☎接続中...";
-        context = await SkyWayContext.Create(API_KEY, { auth: { type: 'none' } });
-        room = await SkyWayRoom.FindOrCreate(context, { type: 'p2p', name: num });
-        me = await room.join();
-        await me.publish(localStream);
-
-        room.onStreamPublished.add(async ({ stream }) => {
-            if (stream.contentType === 'audio') {
-                const { track } = await me.subscribe(stream.id);
-                track.attach(document.getElementById('remote-audio'));
-                
-                // 通話中UI
-                document.getElementById('status').innerText = "📶通話中";
-                document.getElementById('phone-number').style.display = 'none';
-                document.getElementById('call-state').style.display = 'block';
-                startTimer();
-            }
-        });
+    // アプリ切り替え
+    function switchApp(app) {
+        currentApp = app;
+        document.querySelectorAll('.app-layer').forEach(el => el.classList.remove('active'));
+        document.getElementById('app-' + app).classList.add('active');
+        document.getElementById('app-title').innerText = app === 'phone' ? '電話' : 'ﾒｰﾙ';
     }
 
-    // 各ボタンの動作
-    document.getElementById('btn-call').onclick = startCall;
-    document.getElementById('btn-end').onclick = () => location.reload();
-    document.getElementById('btn-mail').onclick = () => {
-        const msg = prompt("送りたい数字を入力してください");
-        if(msg) document.getElementById('sms-display').innerText = "送信済: " + msg;
-    };
+    // キー入力
+    function pressNum(n) {
+        const id = currentApp === 'phone' ? 'phone-num' : 'sms-text';
+        document.getElementById(id).value += n;
+    }
+
+    function deleteChar() {
+        const id = currentApp === 'phone' ? 'phone-num' : 'sms-text';
+        const el = document.getElementById(id);
+        el.value = el.value.slice(0, -1);
+    }
+
+    // 2. 通話機能の実装
+    async function startCall() {
+        const num = document.getElementById('phone-num').value;
+        if (!num) return alert("番号を入力してください");
+        if (!localStream) return alert("マイクが許可されていません");
+
+        document.getElementById('signal').innerText = "☎接続中";
+        try {
+            const context = await SkyWayContext.Create(API_KEY, { auth: { type: 'none' } });
+            const room = await SkyWayRoom.FindOrCreate(context, { type: 'p2p', name: num });
+            const me = await room.join();
+            await me.publish(localStream);
+
+            room.onStreamPublished.add(async ({ stream }) => {
+                if (stream.contentType === 'audio') {
+                    const { track } = await me.subscribe(stream.id);
+                    track.attach(document.getElementById('remote-audio'));
+                    
+                    document.getElementById('signal').innerText = "📶通話中";
+                    document.getElementById('phone-num').style.display = 'none';
+                    document.getElementById('calling-status').style.display = 'block';
+                    startTimer();
+                }
+            });
+        } catch (e) {
+            alert("エラー: 通信に失敗しました。");
+            location.reload();
+        }
+    }
+
+    function sendAction() {
+        if (currentApp === 'sms') {
+            const txt = document.getElementById('sms-text').value;
+            if(txt) {
+                document.getElementById('sms-log').innerText = "送信済: " + txt;
+                document.getElementById('sms-text').value = "";
+            }
+        }
+    }
 
     function startTimer() {
         let sec = 0;
@@ -133,7 +170,7 @@
         }, 1000);
     }
 
-    setup();
+    init();
 </script>
 </body>
 </html>
