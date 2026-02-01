@@ -2,104 +2,125 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>WebRTC Voice Chat</title>
+    <title>WebRTC Voice Room</title>
     <style>
-        body { font-family: 'Helvetica Neue', Arial, sans-serif; text-align: center; padding: 50px; background: #f4f7f6; }
-        .status-card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: inline-block; }
-        .visualizer { width: 200px; height: 10px; background: #ddd; margin: 20px auto; border-radius: 5px; overflow: hidden; }
-        .bar { height: 100%; width: 0%; background: #28a745; transition: width 0.1s; }
-        .controls { margin-top: 20px; }
-        button { padding: 12px 24px; font-size: 16px; cursor: pointer; border-radius: 8px; border: none; margin: 5px; transition: 0.3s; }
-        #startButton { background: #6c757d; color: white; }
-        #callButton { background: #28a745; color: white; }
-        #hangupButton { background: #dc3545; color: white; }
-        button:disabled { background: #ccc; cursor: not-allowed; }
+        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f0f2f5; }
+        .container { background: white; max-width: 400px; margin: auto; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        input { width: 80%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; border-radius: 5px; border: none; background: #007bff; color: white; }
+        button:disabled { background: #ccc; }
+        .status { margin: 15px 0; color: #555; }
     </style>
 </head>
 <body>
 
-    <div class="status-card">
-        <h2>音声通話モード</h2>
-        <p id="status">マイクを許可してください</p>
-        
-        <div class="visualizer"><div id="volumeBar" class="bar"></div></div>
-
-        <audio id="remoteAudio" autoplay></audio>
-
-        <div class="controls">
-            <button id="startButton">マイク起動</button>
-            <button id="callButton" disabled>通話開始</button>
-            <button id="hangupButton" disabled>終了</button>
-        </div>
+<div class="container">
+    <h2>音声ルーム</h2>
+    
+    <div class="status" id="status">マイクを許可してください</div>
+    
+    <button id="startAudio">1. マイク準備</button>
+    <hr>
+    
+    <div>
+        <button id="createBtn" disabled>部屋を作成</button>
+        <p>部屋ID: <span id="roomIdDisplay">-</span></p>
+    </div>
+    
+    <hr>
+    
+    <div>
+        <input type="text" id="joinInput" placeholder="部屋IDを入力">
+        <button id="joinBtn" disabled>部屋に参加</button>
     </div>
 
-    <script>
-        let localStream;
-        let peerConnection;
-        const config = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+    <audio id="remoteAudio" autoplay></audio>
+</div>
 
-        const remoteAudio = document.getElementById('remoteAudio');
-        const startButton = document.getElementById('startButton');
-        const callButton = document.getElementById('callButton');
-        const hangupButton = document.getElementById('hangupButton');
-        const statusText = document.getElementById('status');
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
 
-        // 1. マイクのみ取得
-        startButton.onclick = async () => {
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
-                statusText.innerText = "マイク準備完了";
-                startButton.disabled = true;
-                callButton.disabled = false;
-                
-                // 音声レベルの簡易可視化（動作確認用）
-                setupVisualizer(localStream);
-            } catch (err) {
-                statusText.innerText = "マイクの取得に失敗しました";
-                console.error(err);
+<script>
+    // --- ⚠️ ここにあなたのFirebase設定を貼り付けてください ---
+    const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_PROJECT.firebaseapp.com",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_PROJECT.appspot.com",
+        messagingSenderId: "...",
+        appId: "..."
+    };
+    // -----------------------------------------------------
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    let localStream = null;
+    let pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+
+    const status = document.getElementById('status');
+
+    // 1. マイク準備
+    document.getElementById('startAudio').onclick = async () => {
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+        status.innerText = "準備完了！部屋を作るか参加してください";
+        document.getElementById('createBtn').disabled = false;
+        document.getElementById('joinBtn').disabled = false;
+    };
+
+    // 2. 部屋を作成
+    document.getElementById('createBtn').onclick = async () => {
+        const roomRef = db.collection('rooms').doc(); // ランダムID生成
+        document.getElementById('roomIdDisplay').innerText = roomRef.id;
+
+        pc.onicecandidate = e => {
+            if (e.candidate) roomRef.collection('callerCandidates').add(e.candidate.toJSON());
+        };
+
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        await roomRef.set({ offer: { type: offer.type, sdp: offer.sdp } });
+
+        roomRef.onSnapshot(snapshot => {
+            const data = snapshot.data();
+            if (!pc.currentRemoteDescription && data?.answer) {
+                pc.setRemoteDescription(new RTCSessionDescription(data.answer));
             }
+        });
+
+        status.innerText = "待機中... IDを相手に送ってください";
+    };
+
+    // 3. 部屋に参加
+    document.getElementById('joinBtn').onclick = async () => {
+        const roomId = document.getElementById('joinInput').value;
+        const roomRef = db.collection('rooms').doc(roomId);
+        const roomSnapshot = await roomRef.get();
+
+        if (!roomSnapshot.exists) return alert("部屋が見つかりません");
+
+        pc.onicecandidate = e => {
+            if (e.candidate) roomRef.collection('calleeCandidates').add(e.candidate.toJSON());
         };
 
-        // 2. 通話接続処理
-        callButton.onclick = async () => {
-            statusText.innerText = "接続中...";
-            callButton.disabled = true;
-            hangupButton.disabled = false;
+        const data = roomSnapshot.data();
+        await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        await roomRef.update({ answer: { type: answer.type, sdp: answer.sdp } });
 
-            peerConnection = new RTCPeerConnection(config);
-            
-            // 音声トラックを追加
-            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+        roomRef.collection('callerCandidates').onSnapshot(snap => {
+            snap.docChanges().forEach(change => {
+                if (change.type === 'added') pc.addIceCandidate(new RTCIceCandidate(change.doc.data()));
+            });
+        });
 
-            // 相手の音声を受信
-            peerConnection.ontrack = (event) => {
-                remoteAudio.srcObject = event.streams[0];
-                statusText.innerText = "通話中";
-            };
+        status.innerText = "接続成功！";
+    };
 
-            const offer = await peerConnection.createOffer();
-            await peerConnection.setLocalDescription(offer);
-            
-            console.log('SDP Offer作成完了。シグナリングサーバーへ送ってください。');
-        };
-
-        hangupButton.onclick = () => {
-            location.reload();
-        };
-
-        // おまけ：マイクが反応しているか視覚的に出す関数
-        function setupVisualizer(stream) {
-            const audioContext = new AudioContext();
-            const source = audioContext.createMediaStreamSource(stream);
-            const processor = audioContext.createScriptProcessor(2048, 1, 1);
-            source.connect(processor);
-            processor.connect(audioContext.destination);
-            processor.onaudioprocess = (e) => {
-                const input = e.inputBuffer.getChannelData(0);
-                const max = Math.max(...input);
-                document.getElementById('volumeBar').style.width = (max * 100) + "%";
-            };
-        }
-    </script>
+    pc.ontrack = e => {
+        document.getElementById('remoteAudio').srcObject = e.streams[0];
+    };
+</script>
 </body>
 </html>
