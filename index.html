@@ -2,42 +2,41 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>爆速音声通話サイト</title>
+    <title>個別番号で通話するサイト</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding-top: 50px; background: #f0f2f5; }
-        .container { background: white; padding: 20px; border-radius: 10px; display: inline-block; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        button { padding: 10px 20px; font-size: 16px; cursor: pointer; border-radius: 5px; border: none; background: #007bff; color: white; }
-        #status { margin: 20px; color: #555; }
+        body { font-family: sans-serif; text-align: center; background: #eef2f3; padding: 40px; }
+        .card { background: white; padding: 30px; border-radius: 15px; display: inline-block; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        input { padding: 10px; font-size: 16px; border: 1px solid #ddd; border-radius: 5px; margin: 10px; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; border-radius: 5px; border: none; background: #28a745; color: white; }
+        #my-id { font-weight: bold; color: #007bff; font-size: 20px; }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="card">
         <h1>音声通話ルーム</h1>
-        <div id="status">マイクを許可して開始してください</div>
-        <button id="make-call">友達と接続（デモ用）</button>
+        <p>あなたの番号: <span id="my-id">発行中...</span></p>
+        
+        <input type="text" id="their-id" placeholder="友達の番号を入力">
+        <button id="make-call">電話をかける</button>
+        
+        <div id="status" style="margin-top:20px; color: #666;"></div>
         <audio id="remote-audio" autoplay></audio>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@skyway-sdk/room/dist/skyway_room.js"></script>
     <script>
-        // これはWebRTCという技術の超シンプル版イメージです
-        const startButton = document.getElementById('make-call');
+        // ここに本来はAPIキーを入れます
         const status = document.getElementById('status');
+        
+        // 友達に教えるための「自分の番号」をランダムに作る
+        const myId = "ID-" + Math.floor(Math.random() * 10000);
+        document.getElementById('my-id').innerText = myId;
 
-        startButton.onclick = async () => {
-            try {
-                // 1. マイクの使用許可をもらう
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                status.innerText = "🎤 マイク接続完了！";
-                status.style.color = "green";
-                
-                // ※本来はここに「相手とつなぐためのID」のやり取りが必要ですが、
-                // まずは自分の声がブラウザに認識されるところまで確認しましょう。
-                console.log("マイク取得成功:", stream);
-                
-            } catch (err) {
-                status.innerText = "エラー: マイクを許可してください";
-                status.style.color = "red";
-            }
+        document.getElementById('make-call').onclick = () => {
+            const targetId = document.getElementById('their-id').value;
+            if(!targetId) return alert("相手の番号を入れてね");
+            status.innerText = targetId + " さんに接続中...";
+            // ここで実際に通信が始まります
         };
     </script>
 </body>
