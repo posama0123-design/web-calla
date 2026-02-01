@@ -1,93 +1,108 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>ブラウザ音声通話（確実・手動接続版）</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    body { font-family: sans-serif; background:#0f172a; color:#e5e7eb; padding:20px }
-    .card { max-width:480px; margin:auto; background:#020617; padding:16px; border-radius:16px }
-    textarea, input, button { width:100%; padding:10px; margin-top:8px; border-radius:10px; border:none }
-    button { background:#38bdf8; color:#020617; cursor:pointer }
-    .danger { background:#fb7185 }
-    video { width:100%; margin-top:10px; background:#000; border-radius:12px }
-    .note { font-size:0.85rem; opacity:0.85 }
-  </style>
+    <meta charset="UTF-8">
+    <title>ガラケーSMS再現</title>
+    <style>
+        body { background: #333; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; }
+        /* ガラケー本体 */
+        .phone { width: 280px; background: #222; border-radius: 20px; padding: 20px; border: 4px solid #444; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        /* 画面 */
+        .screen { background: #c5d0ba; height: 300px; border: 5px solid #111; padding: 10px; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        .status-bar { font-size: 12px; display: flex; justify-content: space-between; border-bottom: 1px solid #555; margin-bottom: 5px; }
+        .chat-log { flex: 1; font-size: 14px; overflow-y: auto; color: #111; }
+        .input-area { background: #fff; min-height: 20px; font-size: 14px; padding: 2px; border: 1px solid #888; margin-top: 5px; color: #000; }
+        
+        /* キーパッド */
+        .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
+        button { background: #444; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-size: 12px; border-bottom: 3px solid #111; }
+        button:active { border-bottom: 1px solid #111; transform: translateY(2px); }
+        .send-btn { grid-column: span 3; background: #2a5d2a; margin-top: 5px; }
+    </style>
 </head>
 <body>
-  <div class="card">
-    <h2>🎧 ブラウザ音声通話（確実に動く版）</h2>
-    <p class="note">※ この方式は「必ず音が出る」確認用です</p>
 
-    <button onclick="createOffer()">① 発信側：オファー作成</button>
-    <textarea id="offer" placeholder="ここにオファーが表示されます"></textarea>
+<div class="phone">
+    <div class="screen">
+        <div class="status-bar">
+            <span>📶 圏内</span>
+            <span>12:34</span>
+            <span>🔋</span>
+        </div>
+        <div class="chat-log" id="chatLog">受信箱 (0)</div>
+        <div class="input-area" id="display"></div>
+    </div>
 
-    <textarea id="answer" placeholder="相手から受け取ったアンサーを貼り付け"></textarea>
-    <button onclick="setAnswer()">② 発信側：アンサーを設定</button>
+    <div class="keypad">
+        <button onclick="press('1')">1<br>あいうえお</button>
+        <button onclick="press('2')">2<br>かきくけこ</button>
+        <button onclick="press('3')">3<br>さしすせそ</button>
+        <button onclick="press('4')">4<br>たちつてと</button>
+        <button onclick="press('5')">5<br>なにぬねの</button>
+        <button onclick="press('6')">6<br>はひふへほ</button>
+        <button onclick="press('7')">7<br>まみむめも</button>
+        <button onclick="press('8')">8<br>やゆよ</button>
+        <button onclick="press('9')">9<br>らりるれろ</button>
+        <button onclick="clearInput()">クリア</button>
+        <button onclick="press('0')">0<br>わをん</button>
+        <button onclick="press('#')">♯<br>記号</button>
+        <button class="send-btn" onclick="sendMsg()">送信 (メール完了)</button>
+    </div>
+</div>
 
-    <hr style="margin:12px 0; opacity:0.3" />
+<script>
+    const mapping = {
+        '1': ['あ', 'い', 'う', 'え', 'お'],
+        '2': ['か', 'き', 'く', 'け', 'こ'],
+        '3': ['さ', 'し', 'す', 'せ', 'そ'],
+        '4': ['た', 'ち', 'つ', 'て', 'と'],
+        '5': ['な', 'に', 'ぬ', 'ね', 'の'],
+        '6': ['は', 'ひ', 'ふ', 'へ', 'ほ'],
+        '7': ['ま', 'み', 'む', 'め', 'も'],
+        '8': ['や', 'ゆ', 'よ'],
+        '9': ['ら', 'り', 'る', 'れ', 'ろ'],
+        '0': ['わ', 'を', 'ん'],
+        '#': ['、', '。', '！', '？']
+    };
 
-    <textarea id="remoteOffer" placeholder="発信側から受け取ったオファーを貼り付け"></textarea>
-    <button onclick="createAnswer()">③ 受信側：アンサー作成</button>
-    <textarea id="localAnswer" placeholder="ここにアンサーが表示されます"></textarea>
+    let lastKey = null;
+    let index = 0;
+    let currentText = "";
+    let timer = null;
 
-    <button class="danger" onclick="endCall()">通話を切る</button>
-
-    <video id="remote" autoplay playsinline></video>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/simple-peer@9/simplepeer.min.js"></script>
-
-  <script>
-    let peer;
-    let stream;
-
-    async function getStream() {
-      if (!stream) {
-        stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-      }
-      return stream;
+    function press(key) {
+        if (lastKey === key) {
+            index = (index + 1) % mapping[key].length;
+            currentText = currentText.slice(0, -1) + mapping[key][index];
+        } else {
+            index = 0;
+            currentText += mapping[key][index];
+        }
+        lastKey = key;
+        updateDisplay();
+        
+        clearTimeout(timer);
+        timer = setTimeout(() => { lastKey = null; }, 1000); // 1秒経ったら次の文字へ
     }
 
-    async function createOffer() {
-      await getStream();
-      peer = new SimplePeer({ initiator: true, trickle: false, stream });
-
-      peer.on('signal', data => {
-        document.getElementById('offer').value = JSON.stringify(data);
-      });
-
-      peer.on('stream', s => {
-        document.getElementById('remote').srcObject = s;
-      });
+    function updateDisplay() {
+        document.getElementById('display').innerText = currentText;
     }
 
-    async function createAnswer() {
-      await getStream();
-      peer = new SimplePeer({ initiator: false, trickle: false, stream });
-
-      const offer = JSON.parse(document.getElementById('remoteOffer').value);
-      peer.signal(offer);
-
-      peer.on('signal', data => {
-        document.getElementById('localAnswer').value = JSON.stringify(data);
-      });
-
-      peer.on('stream', s => {
-        document.getElementById('remote').srcObject = s;
-      });
+    function clearInput() {
+        currentText = "";
+        updateDisplay();
     }
 
-    function setAnswer() {
-      const answer = JSON.parse(document.getElementById('answer').value);
-      peer.signal(answer);
+    function sendMsg() {
+        if (!currentText) return;
+        const log = document.getElementById('chatLog');
+        log.innerHTML += `<div>送信: ${currentText}</div>`;
+        currentText = "";
+        updateDisplay();
+        log.scrollTop = log.scrollHeight;
     }
+</script>
 
-    function endCall() {
-      if (peer) peer.destroy();
-      peer = null;
-      document.getElementById('remote').srcObject = null;
-    }
-  </script>
 </body>
 </html>
