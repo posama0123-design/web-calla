@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>電話</title>
+    <title>Voice Call App</title>
     <style>
-        * { -webkit-tap-highlight-color: transparent; outline: none; }
-        body { font-family: -apple-system, sans-serif; background: #ffffff; color: #333; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; touch-action: manipulation; }
-        .phone-container { width: 350px; height: 650px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; padding: 60px 20px; box-sizing: border-box; position: relative; }
+        * { -webkit-tap-highlight-color: transparent; outline: none; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #ffffff; color: #333; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
+        .phone-container { width: 350px; height: 650px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; padding: 60px 20px; }
         
+        .display-area { flex-grow: 0; }
         .display-number { font-size: 38px; font-weight: 300; margin: 0; min-height: 50px; letter-spacing: 2px; }
         .status { font-size: 16px; color: #888; margin-top: 5px; height: 20px; }
 
@@ -16,22 +17,35 @@
         .key { width: 75px; height: 75px; background: #f2f2f7; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 30px; user-select: none; margin: auto; transition: background 0.1s; }
         .key:active { background: #e2e2e7; }
 
-        .in-call-grid { display: none; grid-template-columns: repeat(3, 1fr); gap: 25px; margin-top: 50px; }
-        .icon-btn { display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 13px; color: #333; cursor: pointer; }
-        .circle-btn { width: 70px; height: 70px; border: 1px solid #eee; border-radius: 50%; display: flex; justify-content: center; align-items: center; background: rgba(255,255,255,0.9); pointer-events: none; }
+        .bottom-controls { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            width: 100%; 
+            margin-top: 30px;
+            height: 80px;
+            position: relative;
+        }
+
+        /* SMSボタン（最初は非表示） */
+        .btn-sms { 
+            width: 55px; height: 55px; background: #06C755; border-radius: 20px; border: none; 
+            cursor: pointer; display: none; justify-content: center; align-items: center; 
+            color: white; font-weight: bold; font-size: 14px; position: absolute; left: 20px;
+        }
         
-        .bottom-controls { display: flex; justify-content: center; align-items: center; width: 100%; position: relative; min-height: 80px; gap: 15px; }
-
-        .btn-sms { width: 60px; height: 60px; background: #06C755; border-radius: 22px; border: none; cursor: pointer; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; font-weight: bold; font-size: 12px; box-shadow: 0 4px 10px rgba(6,199,85,0.3); }
-        .btn-sms:active { background: #05a346; transform: scale(0.95); }
-
-        .btn-call { width: 75px; height: 75px; background: #28a745; border-radius: 50%; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center; }
-        .btn-hangup { width: 75px; height: 75px; background: #ff3b30; border-radius: 50%; border: none; cursor: pointer; display: none; justify-content: center; align-items: center; }
+        /* 通話ボタン（中央固定） */
+        .btn-call { width: 75px; height: 75px; background: #28a745; border-radius: 50%; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center; margin: 0 auto; }
         
-        .btn-hide { display: none; background: #f0f0f0; border: none; border-radius: 20px; padding: 10px 15px; cursor: pointer; font-size: 14px; color: #666; }
-        .btn-backspace { position: absolute; right: 20px; background: none; border: none; color: #999; font-size: 24px; cursor: pointer; }
+        /* 削除ボタン（右側固定） */
+        .btn-backspace { position: absolute; right: 25px; background: none; border: none; color: #999; font-size: 24px; cursor: pointer; padding: 10px; }
 
+        .btn-hangup { width: 75px; height: 75px; background: #ff3b30; border-radius: 50%; border: none; cursor: pointer; display: none; justify-content: center; align-items: center; margin: 0 auto; }
+        
         #wait-mode-btn { color: #007aff; font-size: 15px; margin-top: 20px; cursor: pointer; border: none; background: none; font-weight: 500; }
+        .in-call-grid { display: none; grid-template-columns: repeat(3, 1fr); gap: 25px; margin-top: 50px; }
+        .icon-btn { display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 13px; color: #333; }
+        .circle-btn { width: 70px; height: 70px; border: 1px solid #eee; border-radius: 50%; display: flex; justify-content: center; align-items: center; background: rgba(255,255,255,0.9); }
     </style>
 </head>
 <body>
@@ -53,14 +67,13 @@
     </div>
 
     <div class="in-call-grid" id="inCallUI">
-        <div class="icon-btn" onclick="toggleMute()"><div class="circle-btn">消音</div></div>
+        <div class="icon-btn"><div class="circle-btn">消音</div></div>
         <div class="icon-btn" onclick="showKeypadInCall()"><div class="circle-btn">キーパッド</div></div>
-        <div class="icon-btn" onclick="toggleSpeaker()"><div class="circle-btn">スピーカ</div></div>
+        <div class="icon-btn"><div class="circle-btn">スピーカ</div></div>
     </div>
 
     <div class="bottom-controls">
-        <button class="btn-hide" id="hideBtn" onclick="hideKeypadInCall()">非表示</button>
-        <button class="btn-sms" id="smsBtn" onclick="sendSMS()"><span>💬</span>SMS</button>
+        <button class="btn-sms" id="smsBtn" onclick="sendSMS()">SMS</button>
         <button class="btn-call" id="callBtn" onclick="call()">
             <svg width="35" height="35" fill="white" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
         </button>
@@ -88,129 +101,131 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    let localStream, pc;
+    let localStream, pc, ringInterval;
 
-    // --- 音声生成エンジンの設定 ---
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    function playDialTone(freq = 440) {
+
+    // DTMF音 (本物の電話音) の生成
+    const dtmfFreqs = {
+        '1': [697, 1209], '2': [697, 1336], '3': [697, 1477],
+        '4': [770, 1209], '5': [770, 1336], '6': [770, 1477],
+        '7': [852, 1209], '8': [852, 1336], '9': [852, 1477],
+        '0': [941, 1336]
+    };
+
+    function playDTMF(char) {
+        if (!dtmfFreqs[char]) return;
         if (audioCtx.state === 'suspended') audioCtx.resume();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.2);
+        const freqs = dtmfFreqs[char];
+        const nodes = freqs.map(f => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.frequency.value = f;
+            gain.gain.value = 0.1;
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            return { osc, gain };
+        });
+        nodes.forEach(n => n.osc.start());
+        setTimeout(() => nodes.forEach(n => { n.osc.stop(); n.osc.disconnect(); }), 150);
+    }
+
+    // プルルルル (呼び出し音)
+    function playRingback() {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const playTone = () => {
+            const osc1 = audioCtx.createOscillator();
+            const osc2 = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc1.frequency.value = 400;
+            osc2.frequency.value = 420; // 唸りを作る
+            gain.gain.setValueAtTime(0, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.05, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.05, audioCtx.currentTime + 1.0);
+            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 1.1);
+            osc1.connect(gain); osc2.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc1.start(); osc2.start();
+            osc1.stop(audioCtx.currentTime + 1.1); osc2.stop(audioCtx.currentTime + 1.1);
+        };
+        playTone();
+        ringInterval = setInterval(playTone, 3000);
     }
 
     const display = document.getElementById('numberDisplay');
     const statusEl = document.getElementById('status');
-    const remoteAudio = document.getElementById('remoteAudio');
 
     window.onload = async () => {
-        try {
-            localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            statusEl.innerText = "番号を入力してください";
-        } catch (e) { statusEl.innerText = "マイクを許可してください"; }
+        try { localStream = await navigator.mediaDevices.getUserMedia({ audio: true }); statusEl.innerText = "番号を入力してください"; }
+        catch (e) { statusEl.innerText = "マイクを許可してください"; }
     };
 
-    function press(num) { 
-        playDialTone(600); // 押した時の音
-        if (display.innerText.length < 6) display.innerText += num; 
-    }
-    
-    function backspace() { 
-        playDialTone(400); // 戻る時の音
-        display.innerText = display.innerText.slice(0, -1); 
-    }
+    function press(num) { playDTMF(num); if (display.innerText.length < 6) display.innerText += num; }
+    function backspace() { display.innerText = display.innerText.slice(0, -1); }
 
     function sendSMS() {
-        playDialTone(800);
         const roomId = display.innerText;
-        if (!roomId || roomId.length < 5) {
-            alert("先に「自分の番号を発行」を押してください！");
-            return;
-        }
-        const message = `通話リクエスト：こちらの番号を入力して発信してください。\n番号：${roomId}`;
+        if (!roomId) return;
+        const message = `通話リクエスト：番号は ${roomId} です。`;
         const smsLink = document.createElement('a');
         smsLink.href = `sms:?&body=${encodeURIComponent(message)}`;
-        document.body.appendChild(smsLink);
         smsLink.click();
-        document.body.removeChild(smsLink);
     }
-
-    // --- 以下、通話ロジック（変更なし） ---
-    function showKeypadInCall() {
-        document.getElementById('inCallUI').style.display = "none";
-        document.getElementById('dialerUI').style.display = "block";
-        document.getElementById('hideBtn').style.display = "block";
-        document.getElementById('smsBtn').style.display = "none";
-    }
-
-    function hideKeypadInCall() {
-        document.getElementById('dialerUI').style.display = "none";
-        document.getElementById('inCallUI').style.display = "grid";
-        document.getElementById('hideBtn').style.display = "none";
-        document.getElementById('smsBtn').style.display = "flex";
-    }
-
-    const createPC = () => {
-        pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
-        pc.ontrack = e => { remoteAudio.srcObject = e.streams[0]; };
-        if (localStream) localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-        pc.onconnectionstatechange = () => {
-            if (pc.connectionState === 'connected') {
-                statusEl.innerText = "通話中...";
-                document.getElementById('dialerUI').style.display = "none";
-                document.getElementById('backspaceBtn').style.display = "none";
-                document.getElementById('callBtn').style.display = "none";
-                document.getElementById('smsBtn').style.display = "none";
-                document.getElementById('inCallUI').style.display = "grid";
-                document.getElementById('hangupBtn').style.display = "flex";
-            }
-        };
-    };
 
     async function createRoom() {
-        playDialTone(1000);
         const roomId = Math.floor(100000 + Math.random() * 900000).toString();
         display.innerText = roomId;
         statusEl.innerText = "待受中...";
+        document.getElementById('smsBtn').style.display = "flex"; // ここでSMS登場！
+        
         const roomRef = db.collection('rooms').doc(roomId);
-        createPC();
-        pc.onicecandidate = e => e.candidate && roomRef.collection('callerCandidates').add(e.candidate.toJSON());
+        initPC(roomRef);
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
         await roomRef.set({ offer: { type: offer.type, sdp: offer.sdp } });
         roomRef.onSnapshot(async snap => {
             const data = snap.data();
-            if (!pc.currentRemoteDescription && data?.answer) await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
-        });
-        roomRef.collection('calleeCandidates').onSnapshot(snap => {
-            snap.docChanges().forEach(change => { if (change.type === 'added') pc.addIceCandidate(new RTCIceCandidate(change.doc.data())); });
+            if (data?.answer && !pc.currentRemoteDescription) {
+                clearInterval(ringInterval);
+                await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+            }
         });
     }
 
     async function call() {
-        playDialTone(1200);
         const roomId = display.innerText;
-        if (roomId.length < 1) return;
+        if (!roomId) return;
+        statusEl.innerText = "発信中...";
+        playRingback(); // プルルルル開始
+        
         const roomRef = db.collection('rooms').doc(roomId);
-        const roomSnapshot = await roomRef.get();
-        if (!roomSnapshot.exists) return alert("番号が正しくないか、相手がいません");
-        createPC();
-        pc.onicecandidate = e => e.candidate && roomRef.collection('calleeCandidates').add(e.candidate.toJSON());
-        const data = roomSnapshot.data();
-        await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+        const snap = await roomRef.get();
+        if (!snap.exists) { clearInterval(ringInterval); return alert("相手がいません"); }
+        
+        initPC(roomRef);
+        await pc.setRemoteDescription(new RTCSessionDescription(snap.data().offer));
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
         await roomRef.update({ answer: { type: answer.type, sdp: answer.sdp } });
-        roomRef.collection('callerCandidates').onSnapshot(snap => {
-            snap.docChanges().forEach(change => { if (change.type === 'added') pc.addIceCandidate(new RTCIceCandidate(change.doc.data())); });
-        });
+    }
+
+    function initPC(roomRef) {
+        pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+        localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+        pc.ontrack = e => document.getElementById('remoteAudio').srcObject = e.streams[0];
+        pc.onicecandidate = e => e.candidate && roomRef.collection(pc.localDescription.type === 'offer' ? 'callerCandidates' : 'calleeCandidates').add(e.candidate.toJSON());
+        pc.onconnectionstatechange = () => {
+            if (pc.connectionState === 'connected') {
+                clearInterval(ringInterval);
+                statusEl.innerText = "通話中";
+                document.getElementById('dialerUI').style.display = "none";
+                document.getElementById('callBtn').style.display = "none";
+                document.getElementById('smsBtn').style.display = "none";
+                document.getElementById('backspaceBtn').style.display = "none";
+                document.getElementById('inCallUI').style.display = "grid";
+                document.getElementById('hangupBtn').style.display = "flex";
+            }
+        };
     }
 
     function hangup() { location.reload(); }
