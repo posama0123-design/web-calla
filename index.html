@@ -2,82 +2,184 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>Simple WebRTC Video Call</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phone App Style</title>
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; }
-        .video-container { display: flex; gap: 10px; margin-bottom: 20px; }
-        video { width: 300px; background: #222; border-radius: 8px; }
-        .controls { display: flex; gap: 10px; }
-        button { padding: 10px 20px; cursor: pointer; border-radius: 5px; border: none; background: #007bff; color: white; }
-        button:disabled { background: #ccc; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #000; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .phone-container { width: 320px; text-align: center; }
+        
+        /* 番号表示エリア */
+        .display { font-size: 40px; min-height: 60px; margin-bottom: 30px; letter-spacing: 2px; }
+        .status { font-size: 14px; color: #888; margin-bottom: 10px; }
+
+        /* キーパッド */
+        .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; justify-items: center; }
+        .key { width: 70px; height: 70px; background: #333; border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; transition: 0.2s; }
+        .key:active { background: #555; }
+        .key span { font-size: 28px; font-weight: 400; }
+        
+        /* 操作ボタン */
+        .controls { margin-top: 40px; display: flex; justify-content: space-around; align-items: center; }
+        .btn-call { width: 75px; height: 75px; background: #28a745; border-radius: 50%; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center; }
+        .btn-hangup { width: 75px; height: 75px; background: #dc3545; border-radius: 50%; border: none; cursor: pointer; display: none; justify-content: center; align-items: center; }
+        .btn-backspace { background: none; border: none; color: #888; font-size: 20px; cursor: pointer; }
+        
+        button:disabled { opacity: 0.3; cursor: not-allowed; }
+        #roomIdArea { color: #28a745; margin-top: 20px; font-size: 12px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <h2>WebRTC ビデオ通話</h2>
+<div class="phone-container">
+    <div class="status" id="status">マイクを起動してください</div>
+    <div class="display" id="numberDisplay"></div>
 
-    <div class="video-container">
-        <div>
-            <p>自分 (Local)</p>
-            <video id="localVideo" autoplay playsinline muted></video>
+    <div id="dialerArea">
+        <div class="keypad">
+            <div class="key" onclick="press('1')"><span>1</span></div>
+            <div class="key" onclick="press('2')"><span>2</span></div>
+            <div class="key" onclick="press('3')"><span>3</span></div>
+            <div class="key" onclick="press('4')"><span>4</span></div>
+            <div class="key" onclick="press('5')"><span>5</span></div>
+            <div class="key" onclick="press('6')"><span>6</span></div>
+            <div class="key" onclick="press('7')"><span>7</span></div>
+            <div class="key" onclick="press('8')"><span>8</span></div>
+            <div class="key" onclick="press('9')"><span>9</span></div>
+            <div style="grid-column: 2" class="key" onclick="press('0')"><span>0</span></div>
         </div>
-        <div>
-            <p>相手 (Remote)</p>
-            <video id="remoteVideo" autoplay playsinline></video>
+
+        <div class="controls">
+            <div style="width: 40px;"></div> <button class="btn-call" id="joinBtn" onclick="call()" disabled>
+                <svg width="35" height="35" fill="white" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+            </button>
+            <button class="btn-backspace" onclick="backspace()">⌫</button>
+        </div>
+        
+        <div id="roomIdArea" onclick="createRoom()">
+            自分の番号を発行（待受）
         </div>
     </div>
 
-    <div class="controls">
-        <button id="startButton">カメラ起動</button>
-        <button id="callButton" disabled>通話開始</button>
-        <button id="hangupButton" disabled>終了</button>
-    </div>
+    <button class="btn-hangup" id="hangupBtn" onclick="hangup()">
+        <svg width="35" height="35" fill="white" viewBox="0 0 24 24"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
+    </button>
 
-    <script>
-        let localStream;
-        let peerConnection;
-        const config = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+    <audio id="remoteAudio" autoplay></audio>
+</div>
 
-        const localVideo = document.getElementById('localVideo');
-        const remoteVideo = document.getElementById('remoteVideo');
-        const startButton = document.getElementById('startButton');
-        const callButton = document.getElementById('callButton');
-        const hangupButton = document.getElementById('hangupButton');
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
 
-        // 1. カメラとマイクの準備
-        startButton.onclick = async () => {
-            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            localVideo.srcObject = localStream;
-            startButton.disabled = true;
-            callButton.disabled = false;
+<script>
+    // --- あなたのFirebase設定 ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyBaMe4Cz_3W75F5NCtioAguONgukg3-k0g",
+        authDomain: "my-call-14d70.firebaseapp.com",
+        projectId: "my-call-14d70",
+        storageBucket: "my-call-14d70.firebasestorage.app",
+        messagingSenderId: "769393584037",
+        appId: "1:769393584037:web:279aa04477f2649230ea4c"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    let localStream, pc;
+    const display = document.getElementById('numberDisplay');
+    const statusEl = document.getElementById('status');
+
+    // 初期化：マイク自動取得を試みる
+    window.onload = async () => {
+        try {
+            localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            statusEl.innerText = "番号を入力してください";
+            document.getElementById('joinBtn').disabled = false;
+        } catch (e) {
+            statusEl.innerText = "マイクの使用を許可してください";
+        }
+    };
+
+    // キーパッド入力
+    function press(num) {
+        if (display.innerText.length < 6) {
+            display.innerText += num;
+        }
+    }
+
+    function backspace() {
+        display.innerText = display.innerText.slice(0, -1);
+    }
+
+    const createPC = () => {
+        pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+        pc.ontrack = e => { document.getElementById('remoteAudio').srcObject = e.streams[0]; };
+        if (localStream) localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+        
+        pc.onconnectionstatechange = () => {
+            if (pc.connectionState === 'connected') {
+                statusEl.innerText = "通話中";
+                document.getElementById('dialerArea').style.display = "none";
+                document.getElementById('hangupBtn').style.display = "flex";
+            }
         };
+    };
 
-        // 2. 通話の開始設定
-        callButton.onclick = async () => {
-            callButton.disabled = true;
-            hangupButton.disabled = false;
+    // 自分の番号を発行（待受モード）
+    async function createRoom() {
+        const roomId = Math.floor(100000 + Math.random() * 900000).toString();
+        display.innerText = roomId;
+        statusEl.innerText = "あなたの番号です（待受中）";
+        
+        const roomRef = db.collection('rooms').doc(roomId);
+        createPC();
+        pc.onicecandidate = e => e.candidate && roomRef.collection('callerCandidates').add(e.candidate.toJSON());
 
-            peerConnection = new RTCPeerConnection(config);
-            
-            // 自分の映像を接続に追加
-            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        await roomRef.set({ offer: { type: offer.type, sdp: offer.sdp } });
 
-            // 相手からの映像を受信した時の処理
-            peerConnection.ontrack = (event) => {
-                remoteVideo.srcObject = event.streams[0];
-            };
+        roomRef.onSnapshot(async snap => {
+            const data = snap.data();
+            if (!pc.currentRemoteDescription && data?.answer) {
+                await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+            }
+        });
+        
+        roomRef.collection('calleeCandidates').onSnapshot(snap => {
+            snap.docChanges().forEach(change => {
+                if (change.type === 'added') pc.addIceCandidate(new RTCIceCandidate(change.doc.data()));
+            });
+        });
+    }
 
-            // オファーの作成（本来はここでシグナリングサーバーへ送信）
-            const offer = await peerConnection.createOffer();
-            await peerConnection.setLocalDescription(offer);
-            
-            console.log('Offer generated. In a real app, send this to the other peer.');
-        };
+    // 番号を入力して発信
+    async function call() {
+        const roomId = display.innerText;
+        if (roomId.length < 1) return;
+        
+        statusEl.innerText = "発信中...";
+        const roomRef = db.collection('rooms').doc(roomId);
+        const roomSnapshot = await roomRef.get();
+        if (!roomSnapshot.exists) return alert("番号が間違っているか、相手がいません");
 
-        hangupButton.onclick = () => {
-            peerConnection.close();
-            location.reload(); // 簡易的なリセット
-        };
-    </script>
+        createPC();
+        pc.onicecandidate = e => e.candidate && roomRef.collection('calleeCandidates').add(e.candidate.toJSON());
+
+        const data = roomSnapshot.data();
+        await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        await roomRef.update({ answer: { type: answer.type, sdp: answer.sdp } });
+
+        roomRef.collection('callerCandidates').onSnapshot(snap => {
+            snap.docChanges().forEach(change => {
+                if (change.type === 'added') pc.addIceCandidate(new RTCIceCandidate(change.doc.data()));
+            });
+        });
+    }
+
+    function hangup() {
+        location.reload();
+    }
+</script>
 </body>
 </html>
