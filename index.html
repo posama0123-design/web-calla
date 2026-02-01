@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title> 電話</title>
+    <title>Voice Call App - Professional</title>
     <style>
         * { -webkit-tap-highlight-color: transparent; outline: none; box-sizing: border-box; }
         body { font-family: -apple-system, sans-serif; background: #ffffff; color: #333; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
@@ -13,22 +13,27 @@
         .status { font-size: 14px; color: #888; margin-top: 5px; height: 20px; }
 
         .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px; }
-        .key { width: 75px; height: 75px; background: #f2f2f7; border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; user-select: none; margin: auto; }
+        .key { width: 75px; height: 75px; background: #f2f2f7; border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; user-select: none; margin: auto; transition: background 0.1s; }
         .key:active { background: #e2e2e7; }
         .key .num { font-size: 30px; line-height: 1; }
         .key .abc { font-size: 10px; font-weight: bold; color: #aaa; margin-top: 2px; }
 
         .bottom-controls { display: flex; justify-content: center; align-items: center; width: 100%; margin-top: 30px; height: 80px; position: relative; }
         .btn-sms { width: 55px; height: 55px; background: #06C755; border-radius: 20px; border: none; cursor: pointer; display: none; justify-content: center; align-items: center; color: white; font-weight: bold; position: absolute; left: 15px; }
-        .btn-call { width: 75px; height: 75px; background: #28a745; border-radius: 50%; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center; margin: 0 auto; }
+        
+        /* 復活させた受話器ボタン */
+        .btn-call { width: 75px; height: 75px; background: #28a745; border-radius: 50%; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center; margin: 0 auto; transition: transform 0.1s; }
+        .btn-call:active { transform: scale(0.9); }
+
         .btn-hangup { width: 75px; height: 75px; background: #ff3b30; border-radius: 50%; border: none; cursor: pointer; display: none; justify-content: center; align-items: center; margin: 0 auto; }
         .btn-backspace { position: absolute; right: 20px; background: none; border: none; color: #bbb; font-size: 24px; cursor: pointer; padding: 10px; }
 
         .in-call-grid { display: none; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 50px; }
         .circle-btn { width: 70px; height: 70px; border: 1px solid #eee; border-radius: 50%; display: flex; justify-content: center; align-items: center; background: rgba(255,255,255,0.9); margin-bottom: 5px; cursor: pointer; }
         .active-mode { background: #333 !important; color: white !important; }
+        
         .btn-hide { display: none; background: #f0f0f0; border: none; border-radius: 20px; padding: 10px 15px; cursor: pointer; color: #666; margin-right: 10px; }
-        #wait-mode-btn { color: #007aff; font-size: 15px; margin-top: 20px; cursor: pointer; border: none; background: none; }
+        #wait-mode-btn { color: #007aff; font-size: 15px; margin-top: 20px; cursor: pointer; border: none; background: none; font-weight: 500; }
     </style>
 </head>
 <body>
@@ -36,7 +41,7 @@
 <div class="phone-container">
     <div class="display-area">
         <p class="display-number" id="numberDisplay"></p>
-        <div class="status" id="status">Ready</div>
+        <div class="status" id="status">準備完了</div>
     </div>
 
     <div id="dialerUI">
@@ -66,8 +71,19 @@
     <div class="bottom-controls">
         <button class="btn-hide" id="hideBtn" onclick="hideKeypadInCall()">非表示</button>
         <button class="btn-sms" id="smsBtn" onclick="sendSMS()">SMS</button>
-        <button class="btn-call" id="callBtn" onclick="call()">📞</button>
-        <button class="btn-hangup" id="hangupBtn" onclick="hangup()">📵</button>
+        
+        <button class="btn-call" id="callBtn" onclick="call()">
+            <svg width="35" height="35" fill="white" viewBox="0 0 24 24">
+                <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
+            </svg>
+        </button>
+
+        <button class="btn-hangup" id="hangupBtn" onclick="hangup()">
+            <svg width="35" height="35" fill="white" viewBox="0 0 24 24">
+                <path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/>
+            </svg>
+        </button>
+
         <button class="btn-backspace" id="backspaceBtn" onclick="backspace()">⌫</button>
     </div>
     <audio id="remoteAudio" autoplay></audio>
@@ -77,6 +93,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
 
 <script>
+    // --- Firebase設定（変更なし） ---
     const firebaseConfig = {
         apiKey: "AIzaSyBaMe4Cz_3W75F5NCtioAguONgukg3-k0g",
         authDomain: "my-call-14d70.firebaseapp.com",
@@ -89,6 +106,7 @@
     const db = firebase.firestore();
     let localStream, pc, isMuted = false, isSpeaker = false;
 
+    // --- 音声生成 (DTMF & Ringback) ---
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const dtmfFreqs = { '1': [697, 1209], '2': [697, 1336], '3': [697, 1477], '4': [770, 1209], '5': [770, 1336], '6': [770, 1477], '7': [852, 1209], '8': [852, 1336], '9': [852, 1477], '0': [941, 1336] };
 
@@ -121,13 +139,16 @@
     const statusEl = document.getElementById('status');
 
     window.onload = async () => {
-        localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        try {
+            localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch(e) { statusEl.innerText = "マイクを許可してください"; }
     };
 
     function press(num) { playDTMF(num); if (display.innerText.length < 6) display.innerText += num; }
     function backspace() { display.innerText = display.innerText.slice(0, -1); }
     function sendSMS() { window.location.href = `sms:?&body=通話番号: ${display.innerText}`; }
 
+    // --- 待機・接続システム ---
     async function createRoom() {
         const roomId = Math.floor(100000 + Math.random() * 900000).toString();
         display.innerText = roomId;
@@ -151,26 +172,24 @@
         statusEl.innerText = "接続中...";
         playRing();
 
-        // 相手が見つかるまで最大5秒間リトライする処理
         let retryCount = 0;
         const tryConnect = async () => {
             const roomRef = db.collection('rooms').doc(roomId);
             const snap = await roomRef.get();
-            
             if (snap.exists && snap.data().offer) {
                 initPC(roomRef);
                 await pc.setRemoteDescription(new RTCSessionDescription(snap.data().offer));
                 const answer = await pc.createAnswer();
                 await pc.setLocalDescription(answer);
                 await roomRef.update({ answer: { type: answer.type, sdp: answer.sdp } });
-            } else if (retryCount < 5) {
+            } else if (retryCount < 6) {
                 retryCount++;
-                setTimeout(tryConnect, 500); // 0.5秒おきに再確認
+                setTimeout(tryConnect, 500);
             } else {
                 statusEl.innerText = "相手が見つかりません";
             }
         };
-        setTimeout(tryConnect, 1000); // 呼び出し音の後に開始
+        setTimeout(tryConnect, 1000);
     }
 
     function initPC(roomRef) {
@@ -190,12 +209,14 @@
                 document.getElementById('dialerUI').style.display = "none";
                 document.getElementById('callBtn').style.display = "none";
                 document.getElementById('smsBtn').style.display = "none";
+                document.getElementById('backspaceBtn').style.display = "none";
                 document.getElementById('inCallUI').style.display = "grid";
                 document.getElementById('hangupBtn').style.display = "flex";
             }
         };
     }
 
+    // --- UIトグル ---
     function toggleMute() { isMuted = !isMuted; localStream.getAudioTracks()[0].enabled = !isMuted; document.getElementById('muteBtn').classList.toggle('active-mode', isMuted); }
     function toggleSpeaker() { isSpeaker = !isSpeaker; document.getElementById('speakerBtn').classList.toggle('active-mode', isSpeaker); }
     function showKeypadInCall() { document.getElementById('inCallUI').style.display = "none"; document.getElementById('dialerUI').style.display = "block"; document.getElementById('hideBtn').style.display = "block"; document.getElementById('wait-mode-btn').style.display = "none"; }
