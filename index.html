@@ -5,100 +5,85 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>電話</title>
     <style>
-        /* 背景画像の設定：フリー素材を全体に敷いてぼかす */
-        body {
-            margin: 0;
-            padding: 0;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-family: -apple-system, sans-serif;
-            background-color: #000;
-            overflow: hidden;
-            position: relative;
+        * { -webkit-tap-highlight-color: transparent; outline: none; box-sizing: border-box; }
+        
+        body { 
+            font-family: -apple-system, sans-serif; 
+            background: #ffffff; /* 初期は白 */
+            color: #333; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+            overflow: hidden; 
+            touch-action: manipulation; 
+            transition: background 0.5s; /* 背景色変化を滑らかに */
         }
 
-        /* ぼかし背景用のレイヤー */
-        .bg-overlay {
+        /* 通話中のみ表示される背景レイヤー */
+        #bg-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            /* Unsplashの絶景フリー素材（山の風景） */
             background-image: url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80');
             background-size: cover;
             background-position: center;
-            filter: blur(20px) brightness(0.8); /* ここで風景だけをぼかす */
-            transform: scale(1.1); /* ぼかしの縁を隠すため少し拡大 */
+            filter: blur(20px) brightness(0.7);
+            transform: scale(1.1);
             z-index: -1;
+            opacity: 0; /* 最初は透明 */
+            transition: opacity 0.8s ease; /* じわっと出てくる */
         }
 
-        /* コンテンツ部分はぼかさない */
-        * { -webkit-tap-highlight-color: transparent; outline: none; box-sizing: border-box; }
+        .phone-container { width: 350px; height: 650px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; padding: 40px 20px; box-sizing: border-box; position: relative; }
         
-        .phone-container { 
-            width: 350px; 
-            height: 650px; 
-            text-align: center; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: space-between; 
-            padding: 40px 20px; 
-            position: relative;
-            color: #fff; /* 背景に合わせて文字を白に */
-        }
-        
-        .display-number { font-size: 38px; font-weight: 300; margin: 0; min-height: 50px; height: 50px; letter-spacing: 2px; }
-        .status { font-size: 16px; color: rgba(255,255,255,0.7); margin-top: 5px; height: 20px; }
+        .display-number { font-size: 38px; font-weight: 300; margin: 0; min-height: 50px; height: 50px; letter-spacing: 1px; transition: color 0.5s; }
+        .status { font-size: 16px; color: #888; margin-top: 5px; height: 20px; transition: color 0.5s; }
 
         .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px; }
-        .key { 
-            width: 75px; height: 75px; 
-            background: rgba(255, 255, 255, 0.2); /* 半透明の白 */
-            border-radius: 50%; 
-            display: flex; flex-direction: column; justify-content: center; align-items: center; 
-            cursor: pointer; user-select: none; margin: auto; 
-            transition: background 0.2s;
-            backdrop-filter: blur(5px); /* ボタン内側も少しだけ透けさせる */
-        }
-        .key:active { background: rgba(255, 255, 255, 0.4); }
-        .key .num { font-size: 30px; line-height: 1; color: #fff; }
-        .key .abc { font-size: 10px; font-weight: bold; color: rgba(255,255,255,0.5); margin-top: 2px; }
+        .key { width: 75px; height: 75px; background: #f2f2f7; border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; user-select: none; margin: auto; transition: background 0.1s, transform 0.1s; }
+        .key:active { background: #d1d1d6; transform: scale(0.95); }
+        .key .num { font-size: 30px; line-height: 1; }
+        .key .abc { font-size: 10px; font-weight: bold; color: #aaa; margin-top: 2px; }
+
+        /* 通話中モードのスタイル調整（文字を白くする） */
+        .in-call-active { color: #fff !important; }
+        .in-call-active .status { color: rgba(255,255,255,0.7) !important; }
 
         .in-call-grid { display: none; grid-template-columns: repeat(3, 1fr); gap: 25px; margin-top: 50px; }
-        .icon-btn { display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 13px; color: #fff; cursor: pointer; }
-        .circle-btn { 
-            width: 70px; height: 70px; 
-            border: 1px solid rgba(255,255,255,0.3); 
-            border-radius: 50%; 
-            display: flex; justify-content: center; align-items: center; 
-            background: rgba(255,255,255,0.1); 
-        }
-        .circle-btn svg { width: 30px; height: 30px; fill: #fff; }
+        .icon-btn { display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 13px; color: #333; cursor: pointer; transition: color 0.5s; }
+        .circle-btn { width: 70px; height: 70px; border: 1px solid #eee; border-radius: 50%; display: flex; justify-content: center; align-items: center; background: rgba(255,255,255,0.9); transition: background 0.3s, border 0.3s; }
+        .circle-btn svg { width: 30px; height: 30px; fill: #333; transition: fill 0.3s; }
+        
+        /* 通話中ボタンの見た目調整 */
+        .in-call-active .circle-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); }
+        .in-call-active .icon-btn { color: #fff; }
+        .in-call-active .circle-btn svg { fill: #fff; }
+
         .active-mode { background: #fff !important; }
         .active-mode svg { fill: #000 !important; }
-        .active-mode-text { color: #fff; }
 
         .bottom-controls { display: flex; justify-content: center; align-items: center; width: 100%; position: relative; min-height: 80px; gap: 20px; }
         .btn-sms { width: 55px; height: 55px; background: #28a745; border-radius: 50%; border: none; cursor: pointer; display: none; justify-content: center; align-items: center; position: absolute; left: 0; }
         .btn-call { width: 75px; height: 75px; background: #28a745; border-radius: 50%; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center; }
         .btn-hangup { width: 75px; height: 75px; background: #ff3b30; border-radius: 50%; border: none; cursor: pointer; display: none; justify-content: center; align-items: center; }
         .btn-hide { display: none; background: rgba(255,255,255,0.2); border: none; border-radius: 20px; padding: 10px 15px; cursor: pointer; font-size: 14px; color: #fff; }
-        .btn-backspace { position: absolute; right: 0; background: none; border: none; color: rgba(255,255,255,0.6); font-size: 24px; cursor: pointer; padding: 10px; }
+        .btn-backspace { position: absolute; right: 0; background: none; border: none; color: #999; font-size: 24px; cursor: pointer; padding: 10px; }
 
-        #wait-mode-btn { color: #fff; font-size: 15px; margin-top: 20px; cursor: pointer; border: none; background: rgba(255,255,255,0.1); padding: 8px 15px; border-radius: 20px; }
+        #wait-mode-btn { color: #007aff; font-size: 15px; margin-top: 20px; cursor: pointer; border: none; background: none; font-weight: 500; }
     </style>
 </head>
 <body>
 
-<div class="bg-overlay"></div>
+<div id="bg-overlay"></div>
 
-<div class="phone-container">
+<div class="phone-container" id="mainContainer">
     <div class="display-area">
         <p class="display-number" id="numberDisplay"></p>
-        <div class="status" id="status">準備完了</div>
+        <div class="status" id="status">準備中...</div>
     </div>
 
     <div id="dialerUI">
@@ -123,7 +108,7 @@
         <div class="icon-btn" onclick="toggleMute()"><div class="circle-btn" id="muteCircle"><svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg></div>消音</div>
         <div class="icon-btn" onclick="showKeypadInCall()"><div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/></svg></div>キーパッド</div>
         <div class="icon-btn" onclick="toggleSpeaker()"><div class="circle-btn" id="speakerCircle"><svg viewBox="0 0 24 24"><path d="M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77zM16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM3 9v6h4l5 5V4L7 9H3z"/></svg></div>スピーカー</div>
-        <div class="icon-btn"><div class="circle-btn" style="font-size: 28px;">＋</div>通話を追加</div>
+        <div class="icon-btn"><div class="circle-btn" style="font-size: 28px; font-weight:100">＋</div>通話を追加</div>
         <div class="icon-btn"><div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg></div>FaceTime</div>
         <div class="icon-btn"><div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div>連絡先</div>
     </div>
@@ -155,7 +140,7 @@
     let localStream, pc;
     let isMuted = false, isSpeakerOn = false;
 
-    // --- 音声調整：より短くリアルなDTMF音 ---
+    // --- 音声エンジンの追加 ---
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const dtmfFreqs = { '1': [697, 1209], '2': [697, 1336], '3': [697, 1477], '4': [770, 1209], '5': [770, 1336], '6': [770, 1477], '7': [852, 1209], '8': [852, 1336], '9': [852, 1477], '0': [941, 1336] };
 
@@ -167,11 +152,28 @@
             const gain = audioCtx.createGain();
             osc.frequency.value = f;
             gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
-            // 音の減衰を早めて「パッ」という音にする
             gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
             osc.connect(gain); gain.connect(audioCtx.destination);
             osc.start(); osc.stop(audioCtx.currentTime + 0.12);
         });
+    }
+
+    // 背景切り替え関数
+    function setInCallVisuals(isActive) {
+        const overlay = document.getElementById('bg-overlay');
+        const container = document.getElementById('mainContainer');
+        const numDisp = document.getElementById('numberDisplay');
+        if (isActive) {
+            overlay.style.opacity = "1";
+            container.classList.add('in-call-active');
+            numDisp.classList.add('in-call-active');
+            document.body.style.background = "#000"; // 背景が浮き立つよう下地を黒に
+        } else {
+            overlay.style.opacity = "0";
+            container.classList.remove('in-call-active');
+            numDisp.classList.remove('in-call-active');
+            document.body.style.background = "#fff";
+        }
     }
 
     const display = document.getElementById('numberDisplay');
@@ -229,6 +231,7 @@
         pc.onconnectionstatechange = () => {
             if (pc.connectionState === 'connected') {
                 statusEl.innerText = "通話中 00:01";
+                setInCallVisuals(true); // 背景オン
                 document.getElementById('dialerUI').style.display = "none";
                 document.getElementById('backspaceBtn').style.display = "none";
                 document.getElementById('callBtn').style.display = "none";
@@ -263,9 +266,13 @@
         const roomId = display.innerText;
         if (roomId.length < 1) return;
         statusEl.innerText = "発信中...";
+        setInCallVisuals(true); // 発信開始時に背景を出す（エフェクト）
         const roomRef = db.collection('rooms').doc(roomId);
         const roomSnapshot = await roomRef.get();
-        if (!roomSnapshot.exists) return alert("相手がいません");
+        if (!roomSnapshot.exists) {
+            setInCallVisuals(false);
+            return alert("相手がいません");
+        }
         createPC();
         pc.onicecandidate = e => e.candidate && roomRef.collection('calleeCandidates').add(e.candidate.toJSON());
         const data = roomSnapshot.data();
