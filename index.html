@@ -30,15 +30,14 @@
         .btn-hide { display: none; background: none; border: 1px solid #ccc; border-radius: 20px; padding: 10px 15px; cursor: pointer; font-size: 14px; color: #666; }
         .btn-backspace { position: absolute; right: 20px; background: none; border: none; color: #999; font-size: 24px; cursor: pointer; }
 
-        #wait-mode-btn { color: #007aff; font-size: 15px; margin-top: 20px; cursor: pointer; border: none; background: none; }
-        #localVideo { width: 100px; height: 140px; position: absolute; top: 20px; right: 20px; border-radius: 10px; border: 2px solid #fff; display: none; object-fit: cover; z-index: 10; background: #000; }
+        .mode-actions { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; align-items: center; }
+        #wait-mode-btn { color: #007aff; font-size: 15px; cursor: pointer; border: none; background: none; font-weight: 500; }
+        #sms-send-btn { display: none; color: #28a745; font-size: 14px; cursor: pointer; border: 1px solid #28a745; border-radius: 15px; padding: 5px 15px; background: none; text-decoration: none; }
     </style>
 </head>
 <body>
 
 <div class="phone-container">
-    <video id="localVideo" autoplay muted playsinline></video>
-    
     <div class="display-area">
         <p class="display-number" id="numberDisplay"></p>
         <div class="status" id="status">準備中...</div>
@@ -51,7 +50,10 @@
             <div class="key" onclick="press('7')">7</div><div class="key" onclick="press('8')">8</div><div class="key" onclick="press('9')">9</div>
             <div></div><div class="key" onclick="press('0')">0</div><div></div>
         </div>
-        <button id="wait-mode-btn" onclick="createRoom()">自分の番号を発行</button>
+        <div class="mode-actions">
+            <button id="wait-mode-btn" onclick="createRoom()">自分の番号を発行</button>
+            <a id="sms-send-btn" href="#">メッセージで番号を送信</a>
+        </div>
     </div>
 
     <div class="in-call-grid" id="inCallUI">
@@ -65,9 +67,7 @@
             <div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77zM16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM3 9v6h4l5 5V4L7 9H3z"/></svg></div>スピーカー
         </div>
         <div class="icon-btn"><div class="circle-btn" style="font-size: 28px;">＋</div>通話を追加</div>
-        <div class="icon-btn" id="facetimeBtn" onclick="toggleFaceTime()">
-            <div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg></div>FaceTime
-        </div>
+        <div class="icon-btn"><div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg></div>FaceTime</div>
         <div class="icon-btn"><div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div>連絡先</div>
     </div>
 
@@ -101,12 +101,11 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     let localStream, pc;
-    let isMuted = false, isSpeakerOn = false, isVideoOn = false;
+    let isMuted = false, isSpeakerOn = false;
 
     const display = document.getElementById('numberDisplay');
     const statusEl = document.getElementById('status');
     const remoteAudio = document.getElementById('remoteAudio');
-    const localVideo = document.getElementById('localVideo');
 
     window.onload = async () => {
         try {
@@ -130,39 +129,14 @@
         document.getElementById('speakerBtn').classList.toggle('active-mode', isSpeakerOn);
     }
 
-    // FaceTime機能（スマホ対応）
-    async function toggleFaceTime() {
-        if (!isVideoOn) {
-            if (!confirm("カメラをオンにしますか？")) return;
-            try {
-                // スマホではこの「関数内」ですぐに実行する必要がある
-                const videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-                localVideo.srcObject = videoStream;
-                localVideo.style.display = "block";
-                if (pc) {
-                    const videoTrack = videoStream.getVideoTracks()[0];
-                    pc.addTrack(videoTrack, videoStream);
-                }
-                isVideoOn = true;
-                document.getElementById('facetimeBtn').classList.add('active-mode');
-            } catch (e) { alert("カメラを起動できませんでした。ブラウザの設定を確認してください。"); }
-        } else {
-            localVideo.style.display = "none";
-            localVideo.srcObject.getTracks().forEach(t => t.stop());
-            isVideoOn = false;
-            document.getElementById('facetimeBtn').classList.remove('active-mode');
-        }
-    }
-
     // 通話中のキーパッド表示
     function showKeypadInCall() {
         document.getElementById('inCallUI').style.display = "none";
         document.getElementById('dialerUI').style.display = "block";
         document.getElementById('hideBtn').style.display = "block";
-        document.getElementById('wait-mode-btn').style.display = "none";
+        document.getElementById('wait-mode-btn').parentElement.style.display = "none";
     }
 
-    // 通話中のキーパッドを隠す
     function hideKeypadInCall() {
         document.getElementById('dialerUI').style.display = "none";
         document.getElementById('inCallUI').style.display = "grid";
@@ -189,6 +163,13 @@
         const roomId = Math.floor(100000 + Math.random() * 900000).toString();
         display.innerText = roomId;
         statusEl.innerText = "待受中...";
+        
+        // SMS送信ボタンを有効化
+        const smsBtn = document.getElementById('sms-send-btn');
+        const message = encodeURIComponent(`通話リクエスト：こちらの番号を入力して発信してください。 番号：${roomId}`);
+        smsBtn.href = `sms:?&body=${message}`;
+        smsBtn.style.display = "inline-block";
+
         const roomRef = db.collection('rooms').doc(roomId);
         createPC();
         pc.onicecandidate = e => e.candidate && roomRef.collection('callerCandidates').add(e.candidate.toJSON());
