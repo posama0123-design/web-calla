@@ -8,42 +8,50 @@
         * { -webkit-tap-highlight-color: transparent; outline: none; box-sizing: border-box; }
         body { font-family: -apple-system, sans-serif; background: #ffffff; color: #333; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
 
-        #bg-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80'); background-size: cover; background-position: center; filter: blur(20px) brightness(0.7); z-index: -1; opacity: 0; transition: 0.8s; }
+        /* 背景：通話中のみ表示 */
+        #bg-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?fit=crop&w=1200&q=80') center/cover; filter: blur(20px) brightness(0.7); z-index: -1; opacity: 0; transition: 0.8s; }
 
-        .phone-container { width: 350px; height: 650px; display: flex; flex-direction: column; background: #fff; position: relative; box-shadow: 0 0 30px rgba(0,0,0,0.1); border-radius: 10px; overflow: hidden; }
-        .main-content { flex: 1; display: flex; flex-direction: column; justify-content: space-between; padding: 50px 20px 10px; }
+        .phone-container { width: 350px; height: 650px; display: flex; flex-direction: column; background: #fff; position: relative; border-radius: 40px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); overflow: hidden; transition: background 0.5s; }
+        
+        .main-content { flex: 1; display: flex; flex-direction: column; justify-content: space-between; padding: 60px 20px 30px; }
 
         /* 番号表示エリア */
         .display-area { text-align: center; }
-        #numberDisplay { width: 100%; border: none; background: transparent; font-size: 40px; font-weight: 300; text-align: center; outline: none; color: #000; }
-        .status { font-size: 14px; color: #007aff; margin-top: 8px; height: 20px; font-weight: 500; }
+        #numberDisplay { width: 100%; border: none; background: transparent; font-size: 42px; font-weight: 300; text-align: center; outline: none; color: #000; transition: color 0.5s; }
+        .status { font-size: 16px; color: #007aff; margin-top: 10px; height: 20px; font-weight: 400; }
 
         /* キーパッド */
-        .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px; }
-        .key { width: 75px; height: 75px; background: #f2f2f7; border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; user-select: none; margin: auto; transition: background 0.1s; }
+        .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px; transition: opacity 0.3s; }
+        .key { width: 75px; height: 75px; background: #f2f2f7; border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; user-select: none; margin: auto; }
         .key:active { background: #d1d1d6; }
         .key .num { font-size: 32px; line-height: 1; }
         .key .abc { font-size: 10px; font-weight: bold; color: #aaa; margin-top: 2px; }
 
+        /* 通話中専用UI（最初は隠す） */
+        #inCallUI { display: none; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 40px; color: white; }
+        .icon-btn { display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 12px; cursor: pointer; }
+        .circle-btn { width: 70px; height: 70px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 1px solid rgba(255,255,255,0.2); }
+        .circle-btn svg { width: 28px; height: 28px; fill: white; }
+
         /* 下部ボタン */
         .bottom-controls { display: flex; justify-content: center; align-items: center; width: 100%; position: relative; min-height: 100px; }
-        .btn-call { width: 75px; height: 75px; background: #28a745; border-radius: 50%; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center; }
+        .btn-call { width: 75px; height: 75px; background: #28a745; border-radius: 50%; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.3s; }
+        .btn-hangup { width: 75px; height: 75px; background: #ff3b30; border-radius: 50%; border: none; cursor: pointer; display: none; justify-content: center; align-items: center; }
         .btn-backspace { position: absolute; right: 20px; background: none; border: none; color: #999; font-size: 24px; cursor: pointer; }
         
-        #wait-mode-btn { color: #007aff; font-size: 15px; margin-top: 15px; cursor: pointer; border: none; background: none; font-weight: 500; width: 100%; }
+        #wait-mode-btn { color: #007aff; font-size: 15px; margin-top: 20px; cursor: pointer; border: none; background: none; font-weight: 500; width: 100%; transition: opacity 0.3s; }
 
-        /* タブバー */
-        .tab-bar { height: 85px; border-top: 1px solid #eee; display: flex; justify-content: space-around; align-items: center; padding-bottom: 15px; background: #fff; }
-        .tab-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: #888; cursor: pointer; font-size: 10px; flex: 1; }
-        .tab-item.active { color: #007aff; }
-        .tab-item svg { width: 26px; height: 26px; fill: currentColor; }
+        /* 通話中モードのスタイル */
+        .incall-mode { background: transparent !important; }
+        .incall-mode #numberDisplay { color: white !important; }
+        .incall-mode .status { color: #ccc !important; }
     </style>
 </head>
 <body>
 
 <div id="bg-overlay"></div>
 
-<div class="phone-container">
+<div class="phone-container" id="phoneContainer">
     <div class="main-content">
         <div class="display-area">
             <input type="tel" id="numberDisplay" placeholder="" readonly>
@@ -65,40 +73,40 @@
                 <div class="key" onclick="press('0')"><div class="num">0</div><div class="abc">+</div></div>
                 <div class="key" onclick="press('#')"><div class="num">#</div><div class="abc">&nbsp;</div></div>
             </div>
-            
             <button id="wait-mode-btn" onclick="generateMyNumber()">自分の番号を発行</button>
+        </div>
 
-            <div class="bottom-controls">
-                <button class="btn-call" onclick="makeCall()">
-                    <svg width="35" height="35" fill="white" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
-                </button>
-                <button class="btn-backspace" onclick="backspace()">⌫</button>
-            </div>
+        <div id="inCallUI">
+            <div class="icon-btn"><div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg></div>消音</div>
+            <div class="icon-btn"><div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/></svg></div>キーパッド</div>
+            <div class="icon-btn"><div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77zM16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM3 9v6h4l5 5V4L7 9H3z"/></svg></div>スピーカー</div>
+            <div class="icon-btn"><div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M13 7h-2v4H7v2h4v4h2v-4h4v-2h-4V7zm-1-5C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg></div>通話追加</div>
+            <div class="icon-btn"><div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg></div>ビデオ通話</div>
+            <div class="icon-btn"><div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div>連絡先</div>
         </div>
-    </div>
 
-    <div class="tab-bar">
-        <div class="tab-item" onclick="alert('履歴はありません')">
-            <svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
-            <span>履歴</span>
-        </div>
-        <div class="tab-item" onclick="openSmsApp()">
-            <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
-            <span>SMS</span>
-        </div>
-        <div class="tab-item active">
-            <svg viewBox="0 0 24 24"><path d="M12 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm7-7H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.11 0 2-.9 2-2V5c0-1.1-.89-2-2-2z"/></svg>
-            <span>キーパッド</span>
-        </div>
-        <div class="tab-item" onclick="alert('連絡先はありません')">
-            <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-            <span>連絡先</span>
+        <div class="bottom-controls">
+            <button class="btn-call" id="callBtn" onclick="startCall()">
+                <svg width="35" height="35" fill="white" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+            </button>
+            <button class="btn-hangup" id="hangupBtn" onclick="endCall()">
+                <svg width="35" height="35" fill="white" viewBox="0 0 24 24"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
+            </button>
+            <button class="btn-backspace" id="backspaceBtn" onclick="backspace()">⌫</button>
         </div>
     </div>
 </div>
 
 <script>
     const display = document.getElementById('numberDisplay');
+    const status = document.getElementById('status');
+    const callBtn = document.getElementById('callBtn');
+    const hangupBtn = document.getElementById('hangupBtn');
+    const backspaceBtn = document.getElementById('backspaceBtn');
+    const dialerUI = document.getElementById('dialerUI');
+    const inCallUI = document.getElementById('inCallUI');
+    const phoneContainer = document.getElementById('phoneContainer');
+    const bgOverlay = document.getElementById('bg-overlay');
 
     function press(num) {
         display.value += num;
@@ -110,27 +118,42 @@
 
     // 自分の番号発行
     function generateMyNumber() {
-        const myNum = "172399"; // 例として固定
+        const myNum = "172399";
         display.value = myNum;
-        document.getElementById('status').innerText = "あなたの番号: " + myNum;
+        status.innerText = "待受中: " + myNum;
     }
 
-    // 🌟 SMSアプリを起動する関数
-    function openSmsApp() {
-        const num = display.value;
-        if (!num) {
-            alert("番号を入力するか、自分の番号を発行してください");
-            return;
-        }
-        // iPhone/Android共通のSMS起動
-        const message = `私の番号は${num}です。お電話待ってます。`;
-        window.location.href = `sms:${num}?body=${encodeURIComponent(message)}`;
-    }
-
-    function makeCall() {
+    // 通話開始
+    function startCall() {
         if (!display.value) return;
-        alert(display.value + " へ発信中...");
-        // ここにFirebaseの通話開始ロジックを入れる
+        
+        // UIの切り替え
+        dialerUI.style.display = 'none';
+        inCallUI.style.display = 'grid';
+        callBtn.style.display = 'none';
+        hangupBtn.style.display = 'flex';
+        backspaceBtn.style.display = 'none';
+        
+        // 通話中モードの演出
+        phoneContainer.classList.add('incall-mode');
+        bgOverlay.style.opacity = '1';
+        status.innerText = "通話中...";
+    }
+
+    // 通話終了
+    function endCall() {
+        // UIを戻す
+        dialerUI.style.display = 'block';
+        inCallUI.style.display = 'none';
+        callBtn.style.display = 'flex';
+        hangupBtn.style.display = 'none';
+        backspaceBtn.style.display = 'block';
+        
+        // 演出を戻す
+        phoneContainer.classList.remove('incall-mode');
+        bgOverlay.style.opacity = '0';
+        status.innerText = "通話終了";
+        setTimeout(() => { status.innerText = "準備完了"; }, 2000);
     }
 </script>
 </body>
