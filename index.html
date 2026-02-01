@@ -2,184 +2,104 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>ガラケー - SO Real-Call</title>
+    <title>WebRTC Voice Chat</title>
     <style>
-        :root { --lcd-bg: #c2c7ba; --lcd-text: #333; }
-        body { background: #1a1a1a; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: sans-serif; }
-        .phone { width: 320px; background: linear-gradient(145deg, #ddd, #888); border-radius: 30px; padding: 25px; border: 4px solid #555; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
-        
-        /* 液晶画面 */
-        .screen { background: var(--lcd-bg); height: 260px; border: 12px solid #111; display: flex; flex-direction: column; color: var(--lcd-text); position: relative; overflow: hidden; border-radius: 5px; }
-        .status-bar { font-size: 11px; display: flex; justify-content: space-between; padding: 2px 5px; border-bottom: 1px solid rgba(0,0,0,0.2); }
-        
-        .menu-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 10px; flex: 1; }
-        .menu-item { text-align: center; font-size: 11px; padding: 2px; }
-        .menu-item.selected { background-color: #555; color: #fff; }
-
-        .app-layer { position: absolute; top: 18px; left: 0; width: 100%; height: calc(100% - 18px); background: var(--lcd-bg); display: none; flex-direction: column; padding: 10px; box-sizing: border-box; z-index: 10; text-align: center; }
-        #dialDisplay { font-size: 24px; margin-top: 20px; letter-spacing: 2px; height: 30px; }
-
-        /* 特徴的な操作ボタン */
-        .nav-section { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 20px 0; align-items: center; }
-        
-        .call-btn { 
-            background: linear-gradient(#4caf50, #2e7d32); color: white; border: 2px solid #1b5e20; 
-            border-radius: 10px; height: 40px; font-weight: bold; cursor: pointer; box-shadow: 0 3px #154718;
-        }
-        .call-btn:active { transform: translateY(2px); box-shadow: 0 1px #154718; }
-
-        .end-btn { 
-            background: linear-gradient(#f44336, #c62828); color: white; border: 2px solid #b71c1c; 
-            border-radius: 10px; height: 40px; font-weight: bold; cursor: pointer; box-shadow: 0 3px #7f0000;
-        }
-        .end-btn:active { transform: translateY(2px); box-shadow: 0 1px #7f0000; }
-
-        .ok-btn { width: 55px; height: 55px; border-radius: 50%; background: radial-gradient(#666, #222); color: white; border: 3px solid #888; cursor: pointer; font-size: 14px; box-shadow: 0 4px #000; }
-
-        /* キーパッド */
-        .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-        .keypad button { background: #eee; border: 1px solid #999; padding: 12px; border-radius: 8px; cursor: pointer; border-bottom: 4px solid #bbb; }
-        .key-num { font-size: 18px; font-weight: bold; display: block; }
-        .key-sub { font-size: 9px; color: #666; }
-
-        /* 着信アニメーション */
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0; } }
-        .incoming { color: #d00; font-weight: bold; animation: blink 0.5s infinite; font-size: 20px; }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; text-align: center; padding: 50px; background: #f4f7f6; }
+        .status-card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: inline-block; }
+        .visualizer { width: 200px; height: 10px; background: #ddd; margin: 20px auto; border-radius: 5px; overflow: hidden; }
+        .bar { height: 100%; width: 0%; background: #28a745; transition: width 0.1s; }
+        .controls { margin-top: 20px; }
+        button { padding: 12px 24px; font-size: 16px; cursor: pointer; border-radius: 8px; border: none; margin: 5px; transition: 0.3s; }
+        #startButton { background: #6c757d; color: white; }
+        #callButton { background: #28a745; color: white; }
+        #hangupButton { background: #dc3545; color: white; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
     </style>
 </head>
 <body>
 
-<div class="phone">
-    <div class="screen">
-        <div class="status-bar"><span>📶 *Yll</span><span id="clock">12:00</span><span>🔋</span></div>
+    <div class="status-card">
+        <h2>音声通話モード</h2>
+        <p id="status">マイクを許可してください</p>
         
-        <div class="menu-grid" id="homeMenu">
-            <div class="menu-item selected" id="menu-0"><span style="font-size:20px; display:block;">📖</span>アドレス帳</div>
-            <div class="menu-item" id="menu-1"><span style="font-size:20px; display:block;">📞</span>電話</div>
-            <div class="menu-item" id="menu-2"><span style="font-size:20px; display:block;">📝</span>メモ</div>
+        <div class="visualizer"><div id="volumeBar" class="bar"></div></div>
+
+        <audio id="remoteAudio" autoplay></audio>
+
+        <div class="controls">
+            <button id="startButton">マイク起動</button>
+            <button id="callButton" disabled>通話開始</button>
+            <button id="hangupButton" disabled>終了</button>
         </div>
-
-        <div class="app-layer" id="appScreen">
-            <div id="appTitle" style="font-weight:bold; border-bottom:1px solid #000; margin-bottom:10px;"></div>
-            <div id="appContent"></div>
-        </div>
     </div>
 
-    <div class="nav-section">
-        <button class="call-btn" onclick="startCall()">通話</button>
-        <button class="ok-btn" onclick="openApp()">決定</button>
-        <button class="end-btn" onclick="closeApp()">終了</button>
-    </div>
+    <script>
+        let localStream;
+        let peerConnection;
+        const config = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 
-    <div class="keypad">
-        <button onclick="press('1')"><span class="key-num">1</span><span class="key-sub">あ</span></button>
-        <button onclick="press('2')"><span class="key-num">2</span><span class="key-sub">か</span></button>
-        <button onclick="press('3')"><span class="key-num">3</span><span class="key-sub">さ</span></button>
-        <button onclick="press('4')"><span class="key-num">4</span><span class="key-sub">た</span></button>
-        <button onclick="press('5')"><span class="key-num">5</span><span class="key-sub">な</span></button>
-        <button onclick="press('6')"><span class="key-num">6</span><span class="key-sub">は</span></button>
-        <button onclick="press('7')"><span class="key-num">7</span><span class="key-num">7</span><span class="key-sub">ま</span></button>
-        <button onclick="press('8')"><span class="key-num">8</span><span class="key-sub">や</span></button>
-        <button onclick="press('9')"><span class="key-num">9</span><span class="key-sub">ら</span></button>
-        <button onclick="press('*')"><span class="key-num">＊</span><span class="key-sub">大小</span></button>
-        <button onclick="press('0')"><span class="key-num">0</span><span class="key-sub">わをん</span></button>
-        <button onclick="press('#')"><span class="key-num">＃</span><span class="key-sub">消去</span></button>
-    </div>
-</div>
+        const remoteAudio = document.getElementById('remoteAudio');
+        const startButton = document.getElementById('startButton');
+        const callButton = document.getElementById('callButton');
+        const hangupButton = document.getElementById('hangupButton');
+        const statusText = document.getElementById('status');
 
-<script>
-    let selectedIndex = 1; // 最初から電話に合わせる
-    let isAppOpen = false;
-    let dialNumber = "";
-    let audioCtx = null;
+        // 1. マイクのみ取得
+        startButton.onclick = async () => {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+                statusText.innerText = "マイク準備完了";
+                startButton.disabled = true;
+                callButton.disabled = false;
+                
+                // 音声レベルの簡易可視化（動作確認用）
+                setupVisualizer(localStream);
+            } catch (err) {
+                statusText.innerText = "マイクの取得に失敗しました";
+                console.error(err);
+            }
+        };
 
-    // 通話ベルを鳴らす関数
-    function playBell() {
-        if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        let osc = audioCtx.createOscillator();
-        let gain = audioCtx.createGain();
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 1);
-        osc.stop(audioCtx.currentTime + 1);
-    }
+        // 2. 通話接続処理
+        callButton.onclick = async () => {
+            statusText.innerText = "接続中...";
+            callButton.disabled = true;
+            hangupButton.disabled = false;
 
-    // 他のタブからの着信を監視
-    window.addEventListener('storage', (e) => {
-        if (e.key === 'incoming_call' && e.newValue === '5555') {
-            receiveCall();
+            peerConnection = new RTCPeerConnection(config);
+            
+            // 音声トラックを追加
+            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+            // 相手の音声を受信
+            peerConnection.ontrack = (event) => {
+                remoteAudio.srcObject = event.streams[0];
+                statusText.innerText = "通話中";
+            };
+
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            
+            console.log('SDP Offer作成完了。シグナリングサーバーへ送ってください。');
+        };
+
+        hangupButton.onclick = () => {
+            location.reload();
+        };
+
+        // おまけ：マイクが反応しているか視覚的に出す関数
+        function setupVisualizer(stream) {
+            const audioContext = new AudioContext();
+            const source = audioContext.createMediaStreamSource(stream);
+            const processor = audioContext.createScriptProcessor(2048, 1, 1);
+            source.connect(processor);
+            processor.connect(audioContext.destination);
+            processor.onaudioprocess = (e) => {
+                const input = e.inputBuffer.getChannelData(0);
+                const max = Math.max(...input);
+                document.getElementById('volumeBar').style.width = (max * 100) + "%";
+            };
         }
-    });
-
-    function receiveCall() {
-        isAppOpen = true;
-        const app = document.getElementById('appScreen');
-        app.style.display = 'flex';
-        document.getElementById('appTitle').innerText = "着信中";
-        document.getElementById('appContent').innerHTML = "<div class='incoming'>🔔 着信中 🔔<br>5555</div>";
-        let bellTimer = setInterval(() => {
-            if(!isAppOpen) clearInterval(bellTimer);
-            else playBell();
-        }, 1500);
-    }
-
-    function startCall() {
-        if (isAppOpen && selectedIndex === 1 && dialNumber === "5555") {
-            document.getElementById('appContent').innerHTML = "発信中...<br>5555";
-            // 他のタブへ「5555」から電話したことを通知
-            localStorage.setItem('incoming_call', ''); 
-            localStorage.setItem('incoming_call', '5555');
-        } else {
-            openApp();
-        }
-    }
-
-    function openApp() {
-        isAppOpen = true;
-        document.getElementById('appScreen').style.display = 'flex';
-        const title = document.getElementById('appTitle');
-        const content = document.getElementById('appContent');
-        
-        if (selectedIndex === 1) {
-            title.innerText = "電話番号入力";
-            content.innerHTML = "<div id='dialDisplay'></div>";
-            dialNumber = "";
-        } else if (selectedIndex === 2) {
-            title.innerText = "メモ帳";
-            content.innerHTML = `<textarea id="memoText" style="width:100%;height:150px;background:transparent;border:none;">${localStorage.getItem('keita_memo')||''}</textarea>`;
-        } else {
-            title.innerText = "アドレス帳";
-            content.innerHTML = "（登録なし）";
-        }
-    }
-
-    function closeApp() {
-        if (selectedIndex === 2 && isAppOpen) {
-            localStorage.setItem('keita_memo', document.getElementById('memoText').value);
-        }
-        isAppOpen = false;
-        dialNumber = "";
-        document.getElementById('appScreen').style.display = 'none';
-        localStorage.removeItem('incoming_call');
-    }
-
-    function press(k) {
-        if (!isAppOpen) return;
-        if (selectedIndex === 1) { // 電話入力
-            if (k === '#') dialNumber = dialNumber.slice(0, -1);
-            else if (k !== '*') dialNumber += k;
-            document.getElementById('dialDisplay').innerText = dialNumber;
-        }
-    }
-
-    function updateClock() {
-        const n = new Date();
-        document.getElementById('clock').innerText = n.getHours().toString().padStart(2,'0')+":"+n.getMinutes().toString().padStart(2,'0');
-    }
-    setInterval(updateClock, 1000); updateClock();
-</script>
+    </script>
 </body>
 </html>
