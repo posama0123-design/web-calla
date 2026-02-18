@@ -3,194 +3,198 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AGM Style Feature Phone</title>
+    <title>AGM Rugged Phone UI</title>
     <style>
         :root {
-            --phone-bg: #1a1a1a;
-            --screen-bg: #4a4a4a;
-            --key-bg: #333;
-            --text-color: #eee;
+            --phone-body: #121212;
+            --screen-bg: #444444; /* 灰色の画面 */
+            --key-bg: #2a2a2a;
+            --accent-gold: #ffc107;
         }
 
         body {
-            background-color: #2c3e50;
+            background-color: #333;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
-            font-family: sans-serif;
+            font-family: 'Arial', sans-serif;
+            color: white;
             user-select: none;
         }
 
         /* 筐体 */
-        .phone-body {
-            width: 280px;
-            background: var(--phone-bg);
-            border-radius: 20px;
-            padding: 20px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-            border: 4px solid #333;
+        .phone-case {
+            width: 300px;
+            background: var(--phone-body);
+            padding: 25px 15px;
+            border-radius: 30px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            border: 2px solid #333;
             position: relative;
         }
 
-        /* ディスプレイ部分 */
-        .screen-container {
-            width: 100%;
-            height: 200px;
+        /* ディスプレイ部分 (操作不可) */
+        .display-unit {
+            width: 90%;
+            height: 180px;
             background: var(--screen-bg);
-            border: 8px solid #222;
-            margin-bottom: 15px;
-            position: relative;
-            overflow: hidden;
-            pointer-events: none; /* 画面タッチ無効 */
+            margin: 0 auto 15px;
+            border: 10px solid #1a1a1a;
+            pointer-events: none; /* タッチ無効 */
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            position: relative;
         }
-
-        .screen-content {
-            text-align: center;
-            color: white;
-            width: 100%;
-        }
-
-        .call-icons {
-            display: flex;
-            justify-content: space-around;
-            width: 80%;
-            margin-top: 20px;
-        }
-
-        .avatar-box, .call-box {
-            width: 60px;
-            height: 60px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .avatar-box { background: #666; }
-        .call-box { background: #00ff00; }
 
         #numberDisplay {
-            font-size: 20px;
-            margin-bottom: 5px;
-            min-height: 24px;
+            font-size: 24px;
+            letter-spacing: 2px;
+            height: 30px;
+            margin-bottom: 10px;
         }
 
         #status {
-            font-size: 12px;
-            color: #ddd;
-        }
-
-        .brand-logo {
-            text-align: center;
-            color: #f1c40f;
-            font-size: 10px;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
-        /* キーパッド */
-        .keypad {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-        }
-
-        .key {
-            background: var(--key-bg);
-            color: white;
-            border-radius: 8px;
-            padding: 10px 0;
-            text-align: center;
-            cursor: pointer;
-            border-bottom: 3px solid #000;
-            transition: transform 0.05s;
-        }
-
-        .key:active {
-            transform: translateY(2px);
-            background: #444;
-        }
-
-        .key .num { font-size: 18px; font-weight: bold; display: block; }
-        .key .abc { font-size: 8px; color: #aaa; text-transform: uppercase; }
-
-        /* 特殊ボタン */
-        .key.call-green { color: #2ecc71; }
-        .key.hangup-red { color: #e74c3c; }
-        
-        .nav-keys {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-
-        .center-key {
-            border: 2px solid #555;
-            background: #222;
+            font-size: 14px;
+            color: #ccc;
         }
 
         #my-number-info {
             position: absolute;
             top: 5px;
-            width: 100%;
-            font-size: 9px;
-            color: #aaa;
-            text-align: center;
+            font-size: 10px;
+            color: #888;
         }
+
+        .brand {
+            text-align: center;
+            font-size: 12px;
+            color: var(--accent-gold);
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        /* 十字キー / 操作パネル */
+        .navigation-panel {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            width: 140px;
+            height: 140px;
+            margin: 0 auto 20px;
+            gap: 5px;
+        }
+
+        .nav-key {
+            background: #222;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            border: 1px solid #333;
+            border-radius: 4px;
+        }
+
+        .nav-key:active { background: #444; }
+
+        .center-ok {
+            grid-column: 2;
+            grid-row: 2;
+            background: #333;
+            border: 2px solid #555;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        /* 通話・終了ボタン（受話器） */
+        .call-controls {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            margin-bottom: 20px;
+        }
+
+        .ctrl-btn {
+            width: 60px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .btn-green { border: 2px solid #2ecc71; color: #2ecc71; }
+        .btn-red { border: 2px solid #e74c3c; color: #e74c3c; }
+        .btn-green:active { background: rgba(46, 204, 113, 0.2); }
+        .btn-red:active { background: rgba(231, 76, 60, 0.2); }
+
+        /* ダイヤルキーパッド */
+        .dial-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            padding: 0 10px;
+        }
+
+        .key {
+            background: var(--key-bg);
+            padding: 12px 0;
+            text-align: center;
+            border-radius: 5px;
+            cursor: pointer;
+            border-bottom: 2px solid #000;
+        }
+
+        .key:active { transform: translateY(2px); background: #3a3a3a; }
+        .key b { display: block; font-size: 18px; }
+        .key span { display: block; font-size: 8px; color: #888; }
     </style>
 </head>
 <body>
 
-<div class="phone-body">
-    <div class="brand-logo">AGM MOBILE</div>
-    
-    <div class="screen-container">
+<div class="phone-case">
+    <div class="brand">AGM MOBILE</div>
+
+    <div class="display-unit">
         <div id="my-number-info">読込中...</div>
-        <div class="screen-content">
-            <div id="numberDisplay"></div>
-            <div id="status">待受中...</div>
-            
-            <div class="call-icons">
-                <div class="avatar-box">
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="black"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                </div>
-                <div class="call-box" id="callStatusBox">
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="white"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
-                </div>
-            </div>
+        <div id="numberDisplay"></div>
+        <div id="status">READY</div>
+    </div>
+
+    <div class="navigation-panel">
+        <div class="nav-key" style="grid-column: 2; grid-row: 1;">▲</div>
+        <div class="nav-key" style="grid-column: 1; grid-row: 2;">◀</div>
+        <div class="nav-key center-ok" onclick="handleCall()">OK</div>
+        <div class="nav-key" style="grid-column: 3; grid-row: 2;">▶</div>
+        <div class="nav-key" style="grid-column: 2; grid-row: 3;">▼</div>
+    </div>
+
+    <div class="call-controls">
+        <div class="ctrl-btn btn-green" onclick="handleCall()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+        </div>
+        <div class="ctrl-btn btn-red" onclick="hangup()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
         </div>
     </div>
 
-    <div class="nav-keys">
-        <div class="key call-green" onclick="handleCallBtn()">
-            <span class="num">📞</span>
-        </div>
-        <div class="key center-key">
-            <span class="abc">OK</span>
-        </div>
-        <div class="key hangup-red" onclick="hangup()">
-            <span class="num">━</span>
-        </div>
-    </div>
-
-    <div class="keypad">
-        <div class="key" onclick="press('1')"><span class="num">1</span><span class="abc">&nbsp;</span></div>
-        <div class="key" onclick="press('2')"><span class="num">2</span><span class="abc">ABC</span></div>
-        <div class="key" onclick="press('3')"><span class="num">3</span><span class="abc">DEF</span></div>
-        <div class="key" onclick="press('4')"><span class="num">4</span><span class="abc">GHI</span></div>
-        <div class="key" onclick="press('5')"><span class="num">5</span><span class="abc">JKL</span></div>
-        <div class="key" onclick="press('6')"><span class="num">6</span><span class="abc">MNO</span></div>
-        <div class="key" onclick="press('7')"><span class="num">7</span><span class="abc">PQRS</span></div>
-        <div class="key" onclick="press('8')"><span class="num">8</span><span class="abc">TUV</span></div>
-        <div class="key" onclick="press('9')"><span class="num">9</span><span class="abc">WXYZ</span></div>
-        <div class="key" onclick="press('*')"><span class="num">*</span><span class="abc"></span></div>
-        <div class="key" onclick="press('0')"><span class="num">0</span><span class="abc">+</span></div>
-        <div class="key" onclick="backspace()"><span class="num">#</span><span class="abc">Clear</span></div>
+    <div class="dial-grid">
+        <div class="key" onclick="press('1')"><b>1</b><span>.,@</span></div>
+        <div class="key" onclick="press('2')"><b>2</b><span>ABC</span></div>
+        <div class="key" onclick="press('3')"><b>3</b><span>DEF</span></div>
+        <div class="key" onclick="press('4')"><b>4</b><span>GHI</span></div>
+        <div class="key" onclick="press('5')"><b>5</b><span>JKL</span></div>
+        <div class="key" onclick="press('6')"><b>6</b><span>MNO</span></div>
+        <div class="key" onclick="press('7')"><b>7</b><span>PQRS</span></div>
+        <div class="key" onclick="press('8')"><b>8</b><span>TUV</span></div>
+        <div class="key" onclick="press('9')"><b>9</b><span>WXYZ</span></div>
+        <div class="key" onclick="press('*')"><b>*</b><span>+</span></div>
+        <div class="key" onclick="press('0')"><b>0</b><span>_</span></div>
+        <div class="key" onclick="backspace()"><b>#</b><span>Clear</span></div>
     </div>
 </div>
 
@@ -200,7 +204,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
 
 <script>
-    // Firebase 設定
+    // Firebase設定
     const firebaseConfig = { 
         apiKey: "AIzaSyBaMe4Cz_3W75F5NCtioAguONgukg3-k0g", 
         authDomain: "my-call-14d70.firebaseapp.com", 
@@ -235,7 +239,7 @@
             localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
             statusEl.innerText = "待受中...";
             autoStartWaiting();
-        } catch (e) { statusEl.innerText = "マイク未許可"; }
+        } catch (e) { statusEl.innerText = "マイク許可が必要"; }
     };
 
     function press(num) {
@@ -258,12 +262,11 @@
         display.innerText = formatNumber(current);
     }
 
-    function handleCallBtn() {
+    function handleCall() {
         if (!isCalling) call();
     }
 
     // --- WebRTC Logic ---
-
     async function autoStartWaiting() {
         const roomRef = db.collection('rooms').doc(MY_NUMBER);
         createPC();
