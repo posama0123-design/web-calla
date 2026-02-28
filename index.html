@@ -8,34 +8,39 @@
         * { -webkit-tap-highlight-color: transparent; outline: none; box-sizing: border-box; }
         body { font-family: -apple-system, sans-serif; background: #ffffff; color: #333; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
         
-        /* 近接センサー用ブラックアウト */
-        #proximity-mask { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: none; }
-        #bg-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: -1; opacity: 0; transition: opacity 0.8s ease; }
-
-        .phone-container { width: 350px; height: 650px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; padding: 40px 20px; position: relative; z-index: 10; }
-        .display-number { font-size: 32px; font-weight: 300; margin: 0; min-height: 50px; letter-spacing: 1px; }
-        .status { font-size: 14px; color: #007aff; margin-top: 5px; height: 20px; font-weight: 500; }
-        
-        /* 着信画面オーバーレイ */
-        #incoming-overlay { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(255,255,255,0.95); z-index: 100; display: none;
-            flex-direction: column; justify-content: space-around; align-items: center;
+        /* 近接センサー用ブラックアウト（最前面） */
+        #proximity-mask { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: #000; z-index: 9999; display: none; 
+            pointer-events: all; /* 画面を覆って操作不能にする */
         }
 
+        #bg-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80'); background-size: cover; background-position: center; filter: blur(20px) brightness(0.7); transform: scale(1.1); z-index: -1; opacity: 0; transition: opacity 0.8s ease; }
+        .phone-container { width: 350px; height: 650px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; padding: 40px 20px; position: relative; }
+        .display-number { font-size: 32px; font-weight: 300; margin: 0; min-height: 50px; letter-spacing: 1px; display: flex; align-items: center; justify-content: center; }
+        .status { font-size: 14px; color: #007aff; margin-top: 5px; height: 20px; font-weight: 500; }
         .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px; }
-        .key { width: 75px; height: 75px; background: #f2f2f7; border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; }
+        .key { width: 75px; height: 75px; background: #f2f2f7; border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; user-select: none; margin: auto; }
         .key:active { background: #d1d1d6; }
+        .key .num { font-size: 30px; line-height: 1; }
+        .key .abc { font-size: 10px; font-weight: bold; color: #aaa; margin-top: 2px; }
 
-        /* ボタンデザイン */
-        .btn-round { width: 75px; height: 75px; border-radius: 50%; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center; }
-        .btn-call { background: #28a745; }
-        .btn-hangup { background: #ff3b30; }
-        .btn-decline { background: #ff3b30; }
-        
-        .in-call-grid { display: none; grid-template-columns: repeat(3, 1fr); gap: 25px; margin-top: 50px; }
         .in-call-active { color: #fff !important; }
+        .in-call-active .key { background: rgba(255, 255, 255, 0.2); color: #fff; }
+        .in-call-grid { display: none; grid-template-columns: repeat(3, 1fr); gap: 25px; margin-top: 50px; }
         
+        .icon-btn { display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 13px; color: #333; cursor: pointer; }
+        .circle-btn { width: 70px; height: 70px; border: 1px solid #eee; border-radius: 50%; display: flex; justify-content: center; align-items: center; background: rgba(255,255,255,0.9); }
+        .circle-btn svg { width: 30px; height: 30px; fill: #333; }
+        .in-call-active .circle-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); }
+        .in-call-active .icon-btn { color: #fff; }
+        .active-mode { background: #fff !important; }
+        .active-mode svg { fill: #000 !important; }
+
+        .bottom-controls { display: flex; justify-content: center; align-items: center; width: 100%; position: relative; min-height: 85px; margin-bottom: 20px; }
+        .btn-call { background: #28a745; width: 75px; height: 75px; border-radius: 50%; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center; }
+        .btn-hangup { background: #ff3b30; width: 75px; height: 75px; border-radius: 50%; border: none; cursor: pointer; display: none; justify-content: center; align-items: center; }
+        .btn-backspace { position: absolute; right: 10px; background: none; border: none; color: #999; font-size: 24px; cursor: pointer; }
         #my-number-info { font-size: 12px; color: #888; margin-bottom: 10px; }
     </style>
 </head>
@@ -43,23 +48,6 @@
 
 <div id="proximity-mask"></div>
 <div id="bg-overlay"></div>
-
-<div id="incoming-overlay">
-    <div>
-        <div style="font-size: 14px; color: #888;">着信中...</div>
-        <div id="caller-id" style="font-size: 28px; margin-top: 10px;">050-XXXX-XXXX</div>
-    </div>
-    <div style="display: flex; gap: 50px;">
-        <div onclick="hangup()" style="text-align: center; cursor: pointer;">
-            <div class="btn-round btn-decline"><svg width="30" fill="white" viewBox="0 0 24 24"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg></div>
-            <div style="font-size: 12px; margin-top: 8px;">拒否</div>
-        </div>
-        <div onclick="acceptCall()" style="text-align: center; cursor: pointer;">
-            <div class="btn-round btn-call"><svg width="30" fill="white" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg></div>
-            <div style="font-size: 12px; margin-top: 8px;">応答</div>
-        </div>
-    </div>
-</div>
 
 <div class="phone-container" id="mainContainer">
     <div class="display-area">
@@ -70,28 +58,35 @@
 
     <div id="dialerUI">
         <div class="keypad">
-            <div class="key" onclick="press('1')"><div style="font-size:30px">1</div></div>
-            <div class="key" onclick="press('2')"><div style="font-size:30px">2</div></div>
-            <div class="key" onclick="press('3')"><div style="font-size:30px">3</div></div>
-            <div class="key" onclick="press('4')"><div style="font-size:30px">4</div></div>
-            <div class="key" onclick="press('5')"><div style="font-size:30px">5</div></div>
-            <div class="key" onclick="press('6')"><div style="font-size:30px">6</div></div>
-            <div class="key" onclick="press('7')"><div style="font-size:30px">7</div></div>
-            <div class="key" onclick="press('8')"><div style="font-size:30px">8</div></div>
-            <div class="key" onclick="press('9')"><div style="font-size:30px">9</div></div>
-            <div class="key" onclick="press('*')"><div style="font-size:30px">*</div></div>
-            <div class="key" onclick="press('0')"><div style="font-size:30px">0</div></div>
-            <div class="key" onclick="press('#')"><div style="font-size:30px">#</div></div>
+            <div class="key" onclick="press('1')"><div class="num">1</div><div class="abc">&nbsp;</div></div>
+            <div class="key" onclick="press('2')"><div class="num">2</div><div class="abc">ABC</div></div>
+            <div class="key" onclick="press('3')"><div class="num">3</div><div class="abc">DEF</div></div>
+            <div class="key" onclick="press('4')"><div class="num">4</div><div class="abc">GHI</div></div>
+            <div class="key" onclick="press('5')"><div class="num">5</div><div class="abc">JKL</div></div>
+            <div class="key" onclick="press('6')"><div class="num">6</div><div class="abc">MNO</div></div>
+            <div class="key" onclick="press('7')"><div class="num">7</div><div class="abc">PQRS</div></div>
+            <div class="key" onclick="press('8')"><div class="num">8</div><div class="abc">TUV</div></div>
+            <div class="key" onclick="press('9')"><div class="num">9</div><div class="abc">WXYZ</div></div>
+            <div class="key" onclick="press('*')"><div class="num">*</div><div class="abc">&nbsp;</div></div>
+            <div class="key" onclick="press('0')"><div class="num">0</div><div class="abc">+</div></div>
+            <div class="key" onclick="press('#')"><div class="num">#</div><div class="abc">&nbsp;</div></div>
         </div>
     </div>
 
     <div class="in-call-grid" id="inCallUI">
-        <div style="color:#fff">通話中...</div>
+        <div class="icon-btn" onclick="toggleMute()"><div class="circle-btn" id="muteCircle"><svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg></div>消音</div>
+        <div class="icon-btn"><div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/></svg></div>キーパッド</div>
+        <div class="icon-btn" onclick="toggleSpeaker()"><div class="circle-btn" id="speakerCircle"><svg viewBox="0 0 24 24"><path d="M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77zM16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM3 9v6h4l5 5V4L7 9H3z"/></svg></div>スピーカー</div>
     </div>
 
     <div class="bottom-controls">
-        <button class="btn-round btn-call" id="callBtn" onclick="initiateCall()"></button>
-        <button class="btn-round btn-hangup" id="hangupBtn" style="display:none;" onclick="hangup()"></button>
+        <button class="btn-call" id="callBtn" onclick="requestPermissionAndCall()">
+            <svg width="35" height="35" fill="white" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+        </button>
+        <button class="btn-hangup" id="hangupBtn" onclick="hangup()">
+            <svg width="35" height="35" fill="white" viewBox="0 0 24 24"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
+        </button>
+        <button class="btn-backspace" id="backspaceBtn" onclick="backspace()">⌫</button>
     </div>
 
     <audio id="remoteAudio" autoplay playsinline></audio>
@@ -106,113 +101,131 @@
     const db = firebase.firestore();
     
     let MY_NUMBER = "";
-    let pc, localStream, incomingData = null;
+    let localStream, pc, timerInterval;
     let inCall = false;
 
     const display = document.getElementById('numberDisplay');
     const statusEl = document.getElementById('status');
-    const incomingOverlay = document.getElementById('incoming-overlay');
     const remoteAudio = document.getElementById('remoteAudio');
+    const proximityMask = document.getElementById('proximity-mask');
 
+    // 1. 番号発行 (050)
     window.onload = async () => {
-        MY_NUMBER = localStorage.getItem('my_fixed_050_number') || "050-" + Math.floor(1000+Math.random()*9000) + "-" + Math.floor(1000+Math.random()*9000);
-        localStorage.setItem('my_fixed_050_number', MY_NUMBER);
-        document.getElementById('my-number-info').innerText = "マイ番号: " + MY_NUMBER;
+        let saved = localStorage.getItem('my_fixed_050_number');
+        if (!saved) {
+            saved = "050-" + Math.floor(1000+Math.random()*9000) + "-" + Math.floor(1000+Math.random()*9000);
+            localStorage.setItem('my_fixed_050_number', saved);
+        }
+        MY_NUMBER = saved;
+        document.getElementById('my-number-info').innerText = "あなたの050番号: " + MY_NUMBER;
         
-        localStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true } });
-        startWaiting();
+        try {
+            // マイク感度調整（音漏れループ防止）
+            localStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+            statusEl.innerText = "待受中...";
+            startWaiting();
+        } catch (e) { statusEl.innerText = "マイクを許可してください"; }
     };
 
-    // 待機中：自分宛のOffer（着信）を監視
-    function startWaiting() {
-        db.collection('rooms').doc(MY_NUMBER).onSnapshot(async snap => {
-            const data = snap.data();
-            if (data?.offer && !inCall) {
-                // 着信画面を表示
-                incomingData = data.offer;
-                document.getElementById('caller-id').innerText = data.caller || "非通知";
-                incomingOverlay.style.display = 'flex';
-                // ここで着信音を鳴らすなどの処理も可能
+    // 2. 重要：センサー権限の取得（iOS対策）
+    async function requestPermissionAndCall() {
+        // iOSで傾きセンサーを動かすための儀式
+        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+            const permission = await DeviceOrientationEvent.requestPermission();
+            if (permission !== 'granted') {
+                alert("センサー許可がないと耳ピタ機能が働きません");
             }
-            if (!snap.exists && inCall) hangup();
+        }
+        // センサー監視開始
+        startProximitySensor();
+        call();
+    }
+
+    function startProximitySensor() {
+        window.addEventListener('deviceorientation', (e) => {
+            if (!inCall) return;
+            // beta: 前後の傾き。70度以上（耳に当てた状態）で画面を真っ暗にする
+            if (Math.abs(e.beta) > 70) {
+                proximityMask.style.display = 'block';
+                remoteAudio.volume = 1.0; // 耳元なので適正音量
+            } else {
+                proximityMask.style.display = 'none';
+            }
         });
     }
 
-    // 応答ボタンを押したとき
-    async function acceptCall() {
-        inCall = true;
-        incomingOverlay.style.display = 'none';
-        
-        // センサーの許可（iOS対策）
-        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-            await DeviceOrientationEvent.requestPermission();
-        }
-        startSensor();
-
-        createPC();
-        await pc.setRemoteDescription(new RTCSessionDescription(incomingData));
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-        await db.collection('rooms').doc(MY_NUMBER).update({ answer });
-        
-        showInCallUI();
-    }
-
-    // 自分から発信するとき
-    async function initiateCall() {
-        const target = display.innerText;
-        if (!target) return;
-        inCall = true;
-        
-        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-            await DeviceOrientationEvent.requestPermission();
-        }
-        startSensor();
-
-        createPC();
+    // --- WebRTC Logic ---
+    async function startWaiting() {
+        const roomRef = db.collection('rooms').doc(MY_NUMBER);
+        createPC(roomRef, 'caller');
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
-        await db.collection('rooms').doc(target).set({ offer, caller: MY_NUMBER });
-
-        // 相手の応答を待つ
-        db.collection('rooms').doc(target).onSnapshot(async snap => {
+        await roomRef.set({ offer });
+        roomRef.onSnapshot(async snap => {
             const data = snap.data();
-            if (data?.answer && !pc.currentRemoteDescription) {
-                await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
-                showInCallUI();
-            }
+            if (data?.answer && !pc.currentRemoteDescription) pc.setRemoteDescription(new RTCSessionDescription(data.answer));
         });
     }
 
-    function createPC() {
+    async function call() {
+        const targetId = display.innerText;
+        if (!targetId) return;
+        const roomRef = db.collection('rooms').doc(targetId);
+        const snap = await roomRef.get();
+        if (!snap.exists) { alert("番号が違います"); return; }
+        
+        createPC(roomRef, 'callee');
+        await pc.setRemoteDescription(new RTCSessionDescription(snap.data().offer));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        await roomRef.update({ answer });
+    }
+
+    function createPC(roomRef, type) {
         pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
         localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
         pc.ontrack = e => { 
             remoteAudio.srcObject = e.streams[0];
-            remoteAudio.volume = 0.5; // 最初は音量を抑える（受話器モード想定）
+            // 音漏れ対策：初期音量を少し下げる（耳に当ててから上げる運用を推奨）
+            remoteAudio.volume = 0.6;
         };
-    }
-
-    function startSensor() {
-        window.addEventListener('deviceorientation', e => {
-            if (!inCall) return;
-            const isNear = Math.abs(e.beta) > 75; // スマホを耳に当てた角度
-            document.getElementById('proximity-mask').style.display = isNear ? 'block' : 'none';
-            remoteAudio.volume = isNear ? 1.0 : 0.4; // 耳に当てているときだけ音量を上げる
-        });
-    }
-
-    function showInCallUI() {
-        document.getElementById('dialerUI').style.display = 'none';
-        document.getElementById('callBtn').style.display = 'none';
-        document.getElementById('hangupBtn').style.display = 'flex';
-        document.getElementById('bg-overlay').style.opacity = '1';
-        statusEl.innerText = "通話中";
+        
+        pc.onconnectionstatechange = () => {
+            if (pc.connectionState === 'connected') {
+                inCall = true;
+                document.getElementById('dialerUI').style.display = 'none';
+                document.getElementById('inCallUI').style.display = 'grid';
+                document.getElementById('callBtn').style.display = 'none';
+                document.getElementById('hangupBtn').style.display = 'flex';
+                document.getElementById('mainContainer').classList.add('in-call-active');
+                document.body.style.background = "#000";
+            }
+        };
     }
 
     function hangup() { location.reload(); }
 
-    function press(n) { display.innerText += n; }
+    function press(n) { 
+        let c = display.innerText.replace(/-/g, "");
+        if (c.length < 11) {
+            c += n;
+            display.innerText = c.length > 7 ? c.slice(0,3)+"-"+c.slice(3,7)+"-"+c.slice(7) : (c.length > 3 ? c.slice(0,3)+"-"+c.slice(3) : c);
+        }
+    }
+    function backspace() { 
+        let c = display.innerText.replace(/-/g, "").slice(0,-1);
+        display.innerText = "";
+        for(let x of c) press(x);
+    }
+    function toggleMute() {
+        localStream.getAudioTracks()[0].enabled = !localStream.getAudioTracks()[0].enabled;
+        document.getElementById('muteCircle').classList.toggle('active-mode');
+    }
+    function toggleSpeaker() {
+        // Webブラウザでは出力先を動的に変えるのが難しいため、音量を最大にすることで代用
+        remoteAudio.volume = remoteAudio.volume === 1.0 ? 0.5 : 1.0;
+        document.getElementById('speakerCircle').classList.toggle('active-mode');
+    }
 </script>
 </body>
 </html>
