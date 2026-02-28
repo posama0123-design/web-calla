@@ -1,18 +1,21 @@
 {
-  "name": "080 Phone App",
-  "short_name": "080電話",
-  "description": "080番号で通話ができる着信再現アプリ",
-  "start_url": "./index.html",
-  "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#000000",
-  "theme_color": "#000000",
+  "short_name": "050電話",
+  "name": "050固定番号通話アプリ",
   "icons": [
     {
       "src": "https://cdn-icons-png.flaticon.com/512/724/724664.png",
-      "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "sizes": "192x192"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/724/724664.png",
+      "type": "image/png",
+      "sizes": "512x512"
     }
-  ]
+  ],
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#28a745",
+  "orientation": "portrait"
 }
