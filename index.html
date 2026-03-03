@@ -45,11 +45,21 @@
         .btn-backspace { position: absolute; right: 10px; background: none; border: none; color: #999; font-size: 24px; cursor: pointer; padding: 10px; }
         .btn-hide { display: none; position: absolute; right: -5px; background: rgba(255,255,255,0.2); border: none; border-radius: 20px; padding: 8px 15px; cursor: pointer; font-size: 14px; color: #fff; }
         #my-number-info { font-size: 12px; color: #888; margin-bottom: 10px; }
+        /* 連絡先リスト用の簡易スタイル */
+        #contacts-list { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 100; overflow-y: auto; padding: 20px; }
+        .contact-item { padding: 15px; border-bottom: 1px solid #eee; text-align: left; font-size: 18px; cursor: pointer; }
+        .close-contacts { text-align: right; padding: 10px; color: #007aff; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div id="bg-overlay"></div>
+
+<div id="contacts-list">
+    <div class="close-contacts" onclick="toggleContactsView(false)">閉じる</div>
+    <div onclick="addNewContact()" style="padding:15px; color:#28a745; font-weight:bold;">＋ 連絡先を追加</div>
+    <div id="contacts-container"></div>
+</div>
 
 <div class="phone-container" id="mainContainer">
     <div class="display-area">
@@ -81,7 +91,7 @@
         <div class="icon-btn" onclick="toggleSpeaker()"><div class="circle-btn" id="speakerCircle"><svg viewBox="0 0 24 24"><path d="M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77zM16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM3 9v6h4l5 5V4L7 9H3z"/></svg></div>スピーカー</div>
         <div class="icon-btn"><div class="circle-btn" style="font-size: 28px; font-weight:100">＋</div>通話を追加</div>
         <div class="icon-btn"><div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg></div>FaceTime</div>
-        <div class="icon-btn"><div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div>連絡先</div>
+        <div class="icon-btn" onclick="toggleContactsView(true)"><div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div>連絡先</div>
     </div>
 
     <div class="bottom-controls">
@@ -110,6 +120,7 @@
     let MY_NUMBER = "";
     let currentRoomId = ""; 
     let localStream, pc, timerInterval, unsubscribeRoom;
+    let contacts = JSON.parse(localStorage.getItem('phone_contacts') || '{}');
 
     const display = document.getElementById('numberDisplay');
     const statusEl = document.getElementById('status');
@@ -117,10 +128,8 @@
     const remoteAudio = document.getElementById('remoteAudio');
 
     window.onload = async () => {
-        // 050用にキー名を変更
         let saved = localStorage.getItem('my_fixed_050_number');
         if (!saved) {
-            // 050番号として生成
             saved = "050-" + Math.floor(1000+Math.random()*9000) + "-" + Math.floor(1000+Math.random()*9000);
             localStorage.setItem('my_fixed_050_number', saved);
         }
@@ -132,7 +141,58 @@
             statusEl.innerText = "待受中...";
             autoStartWaiting();
         } catch (e) { statusEl.innerText = "マイクを許可してください"; }
+        renderContacts();
     };
+
+    // --- 連絡先機能 ---
+    function toggleContactsView(show) {
+        document.getElementById('contacts-list').style.display = show ? 'block' : 'none';
+    }
+
+    function addNewContact() {
+        const name = prompt("名前を入力してください:");
+        if (!name) return;
+        let num = prompt("電話番号を入力してください (例: 050-1234-5678):");
+        if (!num) return;
+        num = num.replace(/-/g, ""); // ハイフン抜きで保存
+        contacts[num] = name;
+        localStorage.setItem('phone_contacts', JSON.stringify(contacts));
+        renderContacts();
+    }
+
+    function renderContacts() {
+        const container = document.getElementById('contacts-container');
+        container.innerHTML = "";
+        for (let num in contacts) {
+            const div = document.createElement('div');
+            div.className = 'contact-item';
+            div.innerText = `${contacts[num]} (${formatNumber(num)})`;
+            div.onclick = () => {
+                display.innerText = "";
+                for(let n of num) press(n);
+                toggleContactsView(false);
+            };
+            container.appendChild(div);
+        }
+    }
+
+    function formatNumber(current) {
+        let formatted = "";
+        if (current.length > 3 && current.length <= 7) formatted = current.slice(0, 3) + "-" + current.slice(3);
+        else if (current.length > 7) formatted = current.slice(0, 3) + "-" + current.slice(3, 7) + "-" + current.slice(7);
+        else formatted = current;
+        return formatted;
+    }
+
+    function updateDisplayName() {
+        const rawNum = display.innerText.replace(/-/g, "");
+        if (contacts[rawNum]) {
+            statusEl.innerText = contacts[rawNum];
+        } else {
+            statusEl.innerText = "待受中...";
+        }
+    }
+    // ----------------
 
     function watchRoom(roomId) {
         currentRoomId = roomId;
@@ -219,23 +279,27 @@
         let current = display.innerText.replace(/-/g, "");
         if (current.length >= 11) return;
         current += num;
-        let formatted = "";
-        if (current.length > 3 && current.length <= 7) formatted = current.slice(0, 3) + "-" + current.slice(3);
-        else if (current.length > 7) formatted = current.slice(0, 3) + "-" + current.slice(3, 7) + "-" + current.slice(7);
-        else formatted = current;
-        display.innerText = formatted;
+        display.innerText = formatNumber(current);
+        updateDisplayName();
     }
 
     function backspace() { 
         let current = display.innerText.replace(/-/g, "").slice(0, -1);
         display.innerText = "";
         for(let n of current) press(n);
+        if (current === "") statusEl.innerText = "待受中...";
     }
 
     function setInCallVisuals(isActive) {
         const overlay = document.getElementById('bg-overlay');
         const container = document.getElementById('mainContainer');
-        if (isActive) { overlay.style.opacity = "1"; container.classList.add('in-call-active'); document.body.style.background = "#000"; }
+        if (isActive) { 
+            overlay.style.opacity = "1"; 
+            container.classList.add('in-call-active'); 
+            document.body.style.background = "#000"; 
+            const rawNum = display.innerText.replace(/-/g, "");
+            if (contacts[rawNum]) display.innerText = contacts[rawNum]; // 通話中、番号を名前に置き換え
+        }
         else { overlay.style.opacity = "0"; container.classList.remove('in-call-active'); document.body.style.background = "#fff"; clearInterval(timerInterval); }
     }
 
