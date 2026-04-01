@@ -3,615 +3,190 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>電話 - 080固定番号</title>
+    <title>Phone - iOS 6 Config Fixed</title>
     <style>
+        :root {
+            --ios-green: linear-gradient(to bottom, #74d68e 0%, #2e9e44 100%);
+            --ios-red: linear-gradient(to bottom, #e35d5d 0%, #b32d2d 100%);
+            --ios-btn: linear-gradient(to bottom, rgba(255,255,255,0.3) 0%, rgba(0,0,0,0.2) 100%);
+        }
         * { -webkit-tap-highlight-color: transparent; outline: none; box-sizing: border-box; }
-        body { font-family: -apple-system, sans-serif; background: #ffffff; color: #333; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; transition: background 0.5s; }
-        #bg-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80'); background-size: cover; background-position: center; filter: blur(20px) brightness(0.7); transform: scale(1.1); z-index: -1; opacity: 0; transition: opacity 0.8s ease; }
-        .phone-container { width: 350px; height: 650px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; padding: 40px 20px; position: relative; }
-        .display-number { font-size: 32px; font-weight: 300; margin: 0; min-height: 50px; letter-spacing: 1px; display: flex; align-items: center; justify-content: center; }
-        .status { font-size: 14px; color: #007aff; margin-top: 5px; height: 20px; font-weight: 500; }
-        .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px; }
-        .key { width: 75px; height: 75px; background: #f2f2f7; border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; user-select: none; margin: auto; transition: background 0.1s, transform 0.08s; }
-        .key:active { background: #d1d1d6; transform: scale(0.93); }
-        .key .num { font-size: 30px; line-height: 1; }
-        .key .abc { font-size: 10px; font-weight: bold; color: #aaa; margin-top: 2px; }
-        .in-call-active { color: #fff !important; }
-        .in-call-active .status { color: rgba(255,255,255,0.7) !important; }
-        .in-call-active .key { background: rgba(255, 255, 255, 0.2); }
-        .in-call-active .key .num { color: #fff; }
-        .in-call-grid { display: none; grid-template-columns: repeat(3, 1fr); gap: 25px; margin-top: 50px; }
-        .icon-btn { display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 13px; color: #333; cursor: pointer; }
-        .circle-btn { width: 70px; height: 70px; border: 1px solid #eee; border-radius: 50%; display: flex; justify-content: center; align-items: center; background: rgba(255,255,255,0.9); }
-        .circle-btn svg { width: 30px; height: 30px; fill: #333; }
-        .in-call-active .circle-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); }
-        .in-call-active .icon-btn { color: #fff; }
-        .in-call-active .circle-btn svg { fill: #fff; }
-        .active-mode { background: #fff !important; }
-        .active-mode svg { fill: #000 !important; }
-        .bottom-controls { display: flex; justify-content: center; align-items: center; width: 100%; position: relative; min-height: 85px; margin-bottom: 20px; }
-        .btn-call, .btn-hangup { width: 75px; height: 75px; border-radius: 50%; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center; z-index: 10; }
-        .btn-call { background: #28a745; }
-        .btn-hangup { background: #ff3b30; display: none; }
-        .btn-backspace { position: absolute; right: 10px; background: none; border: none; color: #999; font-size: 24px; cursor: pointer; padding: 10px; }
-        .btn-hide { display: none; position: absolute; right: -5px; background: rgba(255,255,255,0.2); border: none; border-radius: 20px; padding: 8px 15px; cursor: pointer; font-size: 14px; color: #fff; }
-        #my-number-info { font-size: 12px; color: #888; margin-bottom: 10px; }
-
-        /* 着信UI */
-        #incomingUI {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(160deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            z-index: 100;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
-            padding: 80px 30px 60px;
-            color: #fff;
-        }
-        #incomingUI .caller-info { display: flex; flex-direction: column; align-items: center; gap: 16px; }
-        #incomingUI .caller-avatar {
-            width: 100px; height: 100px; border-radius: 50%;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 40px;
-            box-shadow: 0 0 0 0 rgba(102,126,234,0.5);
-            animation: pulse-ring 1.5s ease-out infinite;
-        }
-        @keyframes pulse-ring {
-            0% { box-shadow: 0 0 0 0 rgba(102,126,234,0.5); }
-            70% { box-shadow: 0 0 0 30px rgba(102,126,234,0); }
-            100% { box-shadow: 0 0 0 0 rgba(102,126,234,0); }
-        }
-        #incomingUI .caller-number { font-size: 28px; font-weight: 300; letter-spacing: 2px; }
-        #incomingUI .caller-label { font-size: 14px; color: rgba(255,255,255,0.6); }
-        #incomingUI .incoming-actions { display: flex; justify-content: space-around; width: 100%; }
-        #incomingUI .action-btn { display: flex; flex-direction: column; align-items: center; gap: 10px; font-size: 13px; color: rgba(255,255,255,0.8); cursor: pointer; }
-        #incomingUI .action-circle { width: 75px; height: 75px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-        .accept-btn .action-circle { background: #28a745; animation: shake 0.6s ease infinite alternate; }
-        @keyframes shake { 0% { transform: rotate(-10deg); } 100% { transform: rotate(10deg); } }
-        .reject-btn .action-circle { background: #ff3b30; }
+        body { font-family: "Helvetica Neue", Arial, sans-serif; background: #000; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
+        #iphone-4s { width: 320px; height: 480px; background: #000; border: 4px solid #333; border-radius: 12px; position: relative; overflow: hidden; box-shadow: 0 20px 80px rgba(0,0,0,0.9); }
+        #status-bar { height: 20px; background: linear-gradient(to bottom, #000 0%, #444 100%); font-size: 11px; padding: 0 6px; display: flex; align-items: center; position: absolute; width: 100%; z-index: 1000; }
+        .sb-left { display: flex; align-items: center; gap: 4px; width: 100px; }
+        .sb-center { position: absolute; left: 50%; transform: translateX(-50%); font-weight: bold; }
+        .sb-right { flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 3px; }
+        .antenna { display: flex; align-items: flex-end; gap: 1px; height: 10px; }
+        .bar { width: 3px; background: #fff; }
+        .battery { width: 18px; height: 8px; border: 1px solid #ccc; background: #4cd964; }
+        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; padding-top: 20px; display: none; }
+        .screen.active { display: block; }
+        #dialer-screen { background: radial-gradient(circle, #3c4b5d 0%, #1a232e 100%); }
+        #display-area { height: 90px; background: linear-gradient(to bottom, #7d8896 0%, #4a596a 100%); display: flex; align-items: center; padding: 0 15px; border-bottom: 1px solid #222; }
+        #input-number { font-size: 32px; font-weight: bold; flex: 1; text-align: center; color: white; letter-spacing: 2px; }
+        #keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: #333; }
+        .key { height: 62px; background: linear-gradient(to bottom, #fdfdfd 0%, #aeaeae 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; color: #000; border: 0.5px solid #666; }
+        .key:active { background: #888; }
+        .key .num { font-size: 28px; font-weight: bold; line-height: 1; }
+        .key .letters { font-size: 9px; font-weight: bold; margin-top: 2px; }
+        #call-footer { height: 85px; display: flex; justify-content: center; align-items: center; background: #111; }
+        #call-btn { width: 280px; height: 48px; background: var(--ios-green); border-radius: 10px; border: 1px solid #1a5a1a; color: white; font-size: 20px; font-weight: bold; cursor: pointer; }
+        #incoming-screen { background: #000; text-align: center; }
+        .incoming-actions { position: absolute; bottom: 40px; width: 100%; display: flex; justify-content: space-around; }
+        .btn-call { width: 125px; height: 48px; border-radius: 8px; font-weight: bold; font-size: 18px; color: #fff; border: 1px solid #000; cursor: pointer; }
+        #calling-screen { background: #1c1c1c; }
+        .call-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 30px; width: 85%; margin-left: auto; margin-right: auto; }
+        .grid-item { display: flex; flex-direction: column; align-items: center; font-size: 11px; color: #fff; }
+        .grid-btn { width: 55px; height: 55px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.3); background: var(--ios-btn); display: flex; justify-content: center; align-items: center; font-size: 20px; margin-bottom: 5px; }
+        #hangup-btn { width: 280px; height: 48px; background: var(--ios-red); border-radius: 10px; color: white; font-size: 20px; font-weight: bold; margin-top: 40px; border: 1px solid #600; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div id="bg-overlay"></div>
-
-<!-- 着信UI -->
-<div id="incomingUI">
-    <div class="caller-info">
-        <div class="caller-avatar">📞</div>
-        <div class="caller-number" id="callerNumber">不明</div>
-        <div class="caller-label">着信中...</div>
+<div id="iphone-4s">
+    <div id="status-bar">
+        <div class="sb-left">
+            <div class="antenna"><div class="bar" style="height:4px;"></div><div class="bar" style="height:6px;"></div><div class="bar" style="height:8px;"></div><div class="bar" style="height:10px;"></div></div>
+            <span>docomo 3G</span>
+        </div>
+        <div class="sb-center" id="clock">12:00</div>
+        <div class="sb-right"><span>100%</span><div class="battery"></div></div>
     </div>
-    <div class="incoming-actions">
-        <div class="action-btn reject-btn" onclick="rejectCall()">
-            <div class="action-circle">
-                <svg width="35" height="35" fill="white" viewBox="0 0 24 24"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
-            </div>
-            拒否
+
+    <div id="dialer-screen" class="screen active">
+        <div style="font-size:10px; text-align:center; padding:5px 0 2px 0; background:rgba(0,0,0,0.3); color:#ccc;">
+            My: <span id="my-num-text">設定中...</span>
         </div>
-        <div class="action-btn accept-btn" onclick="acceptCall()">
-            <div class="action-circle">
-                <svg width="35" height="35" fill="white" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
-            </div>
-            応答
+        <div id="display-area">
+            <div id="input-number"></div>
+            <div onclick="backspace()" style="cursor:pointer; font-size:24px; padding-left:10px;">⌫</div>
         </div>
+        <div id="keypad">
+            <div class="key" onmousedown="press('1')"><span class="num">1</span><span class="letters">&nbsp;</span></div>
+            <div class="key" onmousedown="press('2')"><span class="num">2</span><span class="letters">ABC</span></div>
+            <div class="key" onmousedown="press('3')"><span class="num">3</span><span class="letters">DEF</span></div>
+            <div class="key" onmousedown="press('4')"><span class="num">4</span><span class="letters">GHI</span></div>
+            <div class="key" onmousedown="press('5')"><span class="num">5</span><span class="letters">JKL</span></div>
+            <div class="key" onmousedown="press('6')"><span class="num">6</span><span class="letters">MNO</span></div>
+            <div class="key" onmousedown="press('7')"><span class="num">7</span><span class="letters">PQRS</span></div>
+            <div class="key" onmousedown="press('8')"><span class="num">8</span><span class="letters">TUV</span></div>
+            <div class="key" onmousedown="press('9')"><span class="num">9</span><span class="letters">WXYZ</span></div>
+            <div class="key" onmousedown="press('*')"><span class="num">*</span><span class="letters">&nbsp;</span></div>
+            <div class="key" onmousedown="press('0')"><span class="num">0</span><span class="letters">+</span></div>
+            <div class="key" onmousedown="press('#')"><span class="num">#</span><span class="letters">&nbsp;</span></div>
+        </div>
+        <div id="call-footer"><button id="call-btn" onclick="startCall()">発信</button></div>
+    </div>
+
+    <div id="incoming-screen" class="screen">
+        <div style="margin-top:60px; text-align:center;">
+            <div style="color:#ccc; font-size:14px;">着信中...</div>
+            <div id="inc-num" style="font-size:32px; margin:14px 0; font-weight:bold;">---</div>
+            <div style="color:#aaa; font-size:13px;">携帯電話</div>
+        </div>
+        <div class="incoming-actions">
+            <button class="btn-call" style="background:var(--ios-red)" onclick="endCall()">拒否</button>
+            <button class="btn-call" style="background:var(--ios-green)" onclick="answerCall()">応答</button>
+        </div>
+    </div>
+
+    <div id="calling-screen" class="screen">
+        <div style="margin-top:50px; text-align:center;">
+            <div id="active-num" style="font-size:28px;">---</div>
+            <div id="call-timer" style="color:#4cd964;">発信中...</div>
+        </div>
+        <div class="call-grid">
+            <div class="grid-item"><div class="grid-btn">🔇</div>消音</div>
+            <div class="grid-item"><div class="grid-btn">⌨️</div>キーパッド</div>
+            <div class="grid-item"><div class="grid-btn">🔊</div>スピーカー</div>
+            <div class="grid-item"><div class="grid-btn">➕</div>通話を追加</div>
+            <div class="grid-item"><div class="grid-btn">🎥</div>FaceTime</div>
+            <div class="grid-item"><div class="grid-btn">👤</div>連絡先</div>
+        </div>
+        <center><button id="hangup-btn" onclick="endCall()">終了</button></center>
     </div>
 </div>
 
-<div class="phone-container" id="mainContainer">
-    <div class="display-area">
-        <div id="my-number-info">読込中...</div>
-        <div class="display-number" id="numberDisplay"></div>
-        <div class="status" id="status">準備中...</div>
-    </div>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    <div id="dialerUI">
-        <div class="keypad">
-            <div class="key" onclick="press('1')"><div class="num">1</div><div class="abc">&nbsp;</div></div>
-            <div class="key" onclick="press('2')"><div class="num">2</div><div class="abc">ABC</div></div>
-            <div class="key" onclick="press('3')"><div class="num">3</div><div class="abc">DEF</div></div>
-            <div class="key" onclick="press('4')"><div class="num">4</div><div class="abc">GHI</div></div>
-            <div class="key" onclick="press('5')"><div class="num">5</div><div class="abc">JKL</div></div>
-            <div class="key" onclick="press('6')"><div class="num">6</div><div class="abc">MNO</div></div>
-            <div class="key" onclick="press('7')"><div class="num">7</div><div class="abc">PQRS</div></div>
-            <div class="key" onclick="press('8')"><div class="num">8</div><div class="abc">TUV</div></div>
-            <div class="key" onclick="press('9')"><div class="num">9</div><div class="abc">WXYZ</div></div>
-            <div class="key" onclick="press('*')"><div class="num" style="margin-top:10px">*</div><div class="abc">&nbsp;</div></div>
-            <div class="key" onclick="press('0')"><div class="num">0</div><div class="abc">+</div></div>
-            <div class="key" onclick="press('#')"><div class="num">#</div><div class="abc">&nbsp;</div></div>
-        </div>
-    </div>
+    // お送りいただいた Firebase 設定を適用
+    const firebaseConfig = {
+      apiKey: "AIzaSyBaMe4Cz_3W75F5NCtioAguONgukg3-k0g",
+      authDomain: "my-call-14d70.firebaseapp.com",
+      projectId: "my-call-14d70",
+      storageBucket: "my-call-14d70.firebasestorage.app",
+      messagingSenderId: "769393584037",
+      appId: "1:769393584037:web:279aa04477f2649230ea4c",
+      measurementId: "G-EXHXKKRT56",
+      databaseURL: "https://my-call-14d70-default-rtdb.firebaseio.com" // URLも統合
+    };
 
-    <div class="in-call-grid" id="inCallUI">
-        <div class="icon-btn" onclick="toggleMute()"><div class="circle-btn" id="muteCircle"><svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg></div>消音</div>
-        <div class="icon-btn" onclick="showKeypadInCall()"><div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/></svg></div>キーパッド</div>
-        <div class="icon-btn" onclick="toggleSpeaker()"><div class="circle-btn" id="speakerCircle"><svg viewBox="0 0 24 24"><path d="M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77zM16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM3 9v6h4l5 5V4L7 9H3z"/></svg></div>スピーカー</div>
-        <div class="icon-btn"><div class="circle-btn" style="font-size: 28px; font-weight:100">＋</div>通話を追加</div>
-        <div class="icon-btn"><div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg></div>FaceTime</div>
-        <div class="icon-btn"><div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div>連絡先</div>
-    </div>
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-    <div class="bottom-controls">
-        <button class="btn-call" id="callBtn" onclick="call()">
-            <svg width="35" height="35" fill="white" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
-        </button>
-        <button class="btn-hangup" id="hangupBtn" onclick="hangup()">
-            <svg width="35" height="35" fill="white" viewBox="0 0 24 24"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
-        </button>
-        <button class="btn-hide" id="hideBtn" onclick="hideKeypadInCall()">非表示</button>
-        <button class="btn-backspace" id="backspaceBtn" onclick="backspace()">⌫</button>
-    </div>
+    let myNum = localStorage.getItem('assigned_num') || `090${Math.floor(10000000 + Math.random() * 90000000)}`;
+    localStorage.setItem('assigned_num', myNum);
+    document.getElementById('my-num-text').innerText = myNum;
 
-    <audio id="remoteAudio" autoplay></audio>
-</div>
+    let targetNum = "";
 
-<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    function show(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
 
-<script>
-    // =====================
-    // Firebase設定
-    // =====================
-    const firebaseConfig = { apiKey: "AIzaSyBaMe4Cz_3W75F5NCtioAguONgukg3-k0g", authDomain: "my-call-14d70.firebaseapp.com", projectId: "my-call-14d70", storageBucket: "my-call-14d70.firebasestorage.app", messagingSenderId: "769393584037", appId: "1:769393584037:web:279aa04477f2649230ea4c" };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+    const dtmfFreqs = { '1':[697,1209], '2':[697,1336], '3':[697,1477], '4':[770,1209], '5':[770,1336], '6':[770,1477], '7':[852,1209], '8':[852,1336], '9':[852,1477], '*': [941,1209], '0':[941,1336], '#':[941,1477] };
 
-    let MY_NUMBER = "";
-    let currentRoomId = "";
-    let localStream, pc, timerInterval, unsubscribeRoom;
-    let audioCtx = null;
-    let ringbackNode = null, ringbackGain = null;
-    let ringtoneInterval = null;
-    let pendingCallerNumber = "";
-
-    const display = document.getElementById('numberDisplay');
-    const statusEl = document.getElementById('status');
-    const myNumInfo = document.getElementById('my-number-info');
-    const remoteAudio = document.getElementById('remoteAudio');
-
-    // =====================
-    // AudioContext 初期化（ユーザー操作後に作成）
-    // =====================
-    function getAudioCtx() {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    window.press = (n) => {
         if (audioCtx.state === 'suspended') audioCtx.resume();
-        return audioCtx;
-    }
-
-    // =====================
-    // ユーティリティ：ランダムなわずかなズレ
-    // =====================
-    function jitter(base, amount) { return base + (Math.random() - 0.5) * amount; }
-
-    // =====================
-    // DTMFトーン（キーパッド音）
-    // 実際の電話機のように：わずかなピッチゆらぎ、クリック感のある立ち上がり、自然な減衰
-    // =====================
-    const DTMF_FREQS = {
-        '1': [697, 1209], '2': [697, 1336], '3': [697, 1477],
-        '4': [770, 1209], '5': [770, 1336], '6': [770, 1477],
-        '7': [852, 1209], '8': [852, 1336], '9': [852, 1477],
-        '*': [941, 1209], '0': [941, 1336], '#': [941, 1477]
+        const g = audioCtx.createGain(); g.gain.value = 0.1; g.connect(audioCtx.destination);
+        dtmfFreqs[n].forEach(f => { const o = audioCtx.createOscillator(); o.frequency.value = f; o.connect(g); o.start(); o.stop(audioCtx.currentTime+0.1); });
+        document.getElementById('input-number').innerText += n;
     };
 
-    function playDTMF(key) {
-        const ctx = getAudioCtx();
-        const freqs = DTMF_FREQS[key];
-        if (!freqs) return;
+    window.backspace = () => { document.getElementById('input-number').innerText = document.getElementById('input-number').innerText.slice(0, -1); };
 
-        const dur = jitter(0.11, 0.03); // 押し方によって長さが少し変わる
-        const vol = jitter(0.18, 0.06); // 力加減でボリュームも揺れる
-
-        // 電話回線のバンドパスフィルタ（300Hz〜3400Hz）をシミュレート
-        const filter = ctx.createBiquadFilter();
-        filter.type = 'bandpass';
-        filter.frequency.value = 1500;
-        filter.Q.value = 0.5;
-        filter.connect(ctx.destination);
-
-        const gain = ctx.createGain();
-        gain.gain.setValueAtTime(0, ctx.currentTime);
-        gain.gain.linearRampToValueAtTime(vol, ctx.currentTime + 0.004); // 鋭い立ち上がり
-        gain.gain.setValueAtTime(vol * jitter(1, 0.05), ctx.currentTime + dur * 0.6);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
-        gain.connect(filter);
-
-        freqs.forEach(f => {
-            const osc = ctx.createOscillator();
-            osc.frequency.setValueAtTime(jitter(f, f * 0.002), ctx.currentTime); // ±0.2%のピッチゆらぎ
-            osc.connect(gain);
-            osc.start(ctx.currentTime);
-            osc.stop(ctx.currentTime + dur);
-        });
-
-        // わずかなクリックノイズ（機械的な押した感じ）
-        const bufSize = ctx.sampleRate * 0.008;
-        const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
-        const data = buf.getChannelData(0);
-        for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufSize) * 0.08;
-        const click = ctx.createBufferSource();
-        click.buffer = buf;
-        click.connect(ctx.destination);
-        click.start(ctx.currentTime);
-    }
-
-    // =====================
-    // 発信コール音（リングバックトーン）
-    // 日本標準 400/450Hz。毎回タイミングとボリュームにわずかなズレを加える
-    // =====================
-    function startRingback() {
-        stopRingback();
-        const ctx = getAudioCtx();
-        let callCount = 0;
-
-        function playBeep() {
-            callCount++;
-            // 2〜3回に1回、わずかに間隔が短くなる（電話回線の自然なゆらぎ）
-            const onDur = jitter(1.0, 0.04);
-            const vol = jitter(0.13, 0.02);
-
-            const filter = ctx.createBiquadFilter();
-            filter.type = 'bandpass';
-            filter.frequency.value = 420;
-            filter.Q.value = 1.2;
-            filter.connect(ctx.destination);
-
-            const gain = ctx.createGain();
-            gain.gain.setValueAtTime(0, ctx.currentTime);
-            gain.gain.linearRampToValueAtTime(vol, ctx.currentTime + 0.018);
-            // 中盤にわずかなうねり（AM変調の雰囲気）
-            gain.gain.setValueAtTime(vol, ctx.currentTime + onDur * 0.3);
-            gain.gain.linearRampToValueAtTime(vol * jitter(0.92, 0.05), ctx.currentTime + onDur * 0.7);
-            gain.gain.linearRampToValueAtTime(0, ctx.currentTime + onDur);
-            gain.connect(filter);
-
-            [400, 450].forEach((f, i) => {
-                const osc = ctx.createOscillator();
-                // ピッチに毎回わずかなズレ
-                osc.frequency.setValueAtTime(jitter(f, 2), ctx.currentTime);
-                osc.connect(gain);
-                osc.start(ctx.currentTime);
-                osc.stop(ctx.currentTime + onDur);
-            });
-
-            // 次の鳴動タイミングも少しズラす（2.8〜3.2秒の範囲）
-            const nextInterval = jitter(3000, 200);
-            ringbackNode = setTimeout(playBeep, nextInterval);
-        }
-
-        playBeep();
-    }
-
-    function stopRingback() {
-        if (ringbackNode) { clearTimeout(ringbackNode); ringbackNode = null; }
-    }
-
-    // =====================
-    // 着信音（リングトーン）
-    // 「リリリリ…」という昔の電話機風。完全にデジタルに聞こえないよう
-    // FM変調とわずかなピッチゆらぎを加える
-    // =====================
-    function startRingtone() {
-        stopRingtone();
-        const ctx = getAudioCtx();
-
-        function playRing() {
-            const baseVol = jitter(0.22, 0.04);
-            // 2連打 × ランダムな間隔
-            const pulses = 2;
-            const pulseGap = jitter(0.42, 0.03);
-
-            for (let i = 0; i < pulses; i++) {
-                const t = ctx.currentTime + i * pulseGap;
-                const pulseDur = jitter(0.28, 0.03);
-                const vol = baseVol * jitter(1, 0.08);
-
-                const filter = ctx.createBiquadFilter();
-                filter.type = 'bandpass';
-                filter.frequency.value = 1000;
-                filter.Q.value = 0.8;
-                filter.connect(ctx.destination);
-
-                const gain = ctx.createGain();
-                gain.gain.setValueAtTime(0, t);
-                gain.gain.linearRampToValueAtTime(vol, t + 0.012);
-                gain.gain.setValueAtTime(vol * jitter(0.95, 0.04), t + pulseDur * 0.5);
-                gain.gain.exponentialRampToValueAtTime(0.001, t + pulseDur);
-                gain.connect(filter);
-
-                // FM変調：モジュレーターで倍音にうねりを与える
-                const modFreq = jitter(6, 1.5); // ビブラート速度（6Hz前後）
-                const modDepth = jitter(18, 5);  // ビブラート幅
-
-                const mod = ctx.createOscillator();
-                mod.frequency.value = modFreq;
-                const modGain = ctx.createGain();
-                modGain.gain.value = modDepth;
-                mod.connect(modGain);
-
-                [880, 1100].forEach(f => {
-                    const osc = ctx.createOscillator();
-                    osc.frequency.setValueAtTime(jitter(f, f * 0.003), t);
-                    modGain.connect(osc.frequency); // FM変調を接続
-                    osc.connect(gain);
-                    osc.start(t);
-                    osc.stop(t + pulseDur);
-                });
-
-                mod.start(t);
-                mod.stop(t + pulseDur);
-            }
-        }
-
-        playRing();
-        // 次の鳴動間隔もわずかにズラす（2.3〜2.7秒）
-        function scheduleNext() {
-            ringtoneInterval = setTimeout(() => {
-                playRing();
-                scheduleNext();
-            }, jitter(2500, 200));
-        }
-        scheduleNext();
-    }
-
-    function stopRingtone() {
-        if (ringtoneInterval) { clearTimeout(ringtoneInterval); ringtoneInterval = null; }
-    }
-
-    // =====================
-    // ブラウザ通知
-    // =====================
-    async function requestNotificationPermission() {
-        if ('Notification' in window && Notification.permission === 'default') {
-            await Notification.requestPermission();
-        }
-    }
-
-    function showIncomingNotification(callerNum) {
-        if ('Notification' in window && Notification.permission === 'granted') {
-            const notif = new Notification('📞 着信中', {
-                body: callerNum + ' から電話がかかっています',
-                icon: 'https://cdn-icons-png.flaticon.com/512/455/455705.png',
-                requireInteraction: true,
-                tag: 'incoming-call'
-            });
-            notif.onclick = () => { window.focus(); notif.close(); };
-            // 着信UI表示後に自動で閉じる
-            setTimeout(() => notif.close(), 30000);
-        }
-    }
-
-    // =====================
-    // 着信UI
-    // =====================
-    function showIncomingUI(callerNum) {
-        pendingCallerNumber = callerNum;
-        document.getElementById('callerNumber').innerText = callerNum;
-        document.getElementById('incomingUI').style.display = 'flex';
-        startRingtone();
-        showIncomingNotification(callerNum);
-    }
-
-    function hideIncomingUI() {
-        document.getElementById('incomingUI').style.display = 'none';
-        stopRingtone();
-    }
-
-    function rejectCall() {
-        hideIncomingUI();
-        hangup(true);
-    }
-
-    // =====================
-    // 着信に応答
-    // =====================
-    async function acceptCall() {
-        hideIncomingUI();
-        // 既にautoStartWaiting()がofferを作成・送信済みなので
-        // WebRTC接続はconnectionStateの変化で自動的に進む
-        statusEl.innerText = "接続中...";
-    }
-
-    // =====================
-    // 起動
-    // =====================
-    window.onload = async () => {
-        await requestNotificationPermission();
-
-        let saved = localStorage.getItem('my_fixed_080_number');
-        if (!saved) {
-            saved = "080-" + Math.floor(1000+Math.random()*9000) + "-" + Math.floor(1000+Math.random()*9000);
-            localStorage.setItem('my_fixed_080_number', saved);
-        }
-        MY_NUMBER = saved;
-        myNumInfo.innerText = "あなたの固定番号: " + MY_NUMBER;
-
-        try {
-            localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            statusEl.innerText = "待受中...";
-            autoStartWaiting();
-        } catch (e) { statusEl.innerText = "マイクを許可してください"; }
+    window.startCall = async () => {
+        const input = document.getElementById('input-number').innerText;
+        if (!input || input === myNum) return;
+        targetNum = input;
+        document.getElementById('active-num').innerText = targetNum;
+        show('calling-screen');
+        await set(ref(db, `calls/${targetNum}`), { from: myNum, status: 'ringing' });
     };
 
-    // =====================
-    // 相手の切断監視
-    // =====================
-    function watchRoom(roomId) {
-        currentRoomId = roomId;
-        unsubscribeRoom = db.collection('rooms').doc(roomId).onSnapshot(snap => {
-            if (!snap.exists && pc) {
-                console.log("相手が切断しました");
-                hangup(false);
-            }
-        });
-    }
+    window.answerCall = async () => {
+        show('calling-screen');
+        document.getElementById('call-timer').innerText = "通話中...";
+        await set(ref(db, `calls/${myNum}`), { from: targetNum, status: 'connected' });
+    };
 
-    // =====================
-    // 待受（着信側）
-    // 着信を検知したら着信UIを表示する
-    // =====================
-    async function autoStartWaiting() {
-        const roomRef = db.collection('rooms').doc(MY_NUMBER);
-        createPC();
-        watchRoom(MY_NUMBER);
+    window.endCall = async () => {
+        show('dialer-screen');
+        document.getElementById('input-number').innerText = "";
+        await remove(ref(db, `calls/${myNum}`));
+        if (targetNum) await remove(ref(db, `calls/${targetNum}`));
+        targetNum = "";
+    };
 
-        pc.onicecandidate = e => e.candidate && roomRef.collection('callerCandidates').add(e.candidate.toJSON());
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-        await roomRef.set({ offer: { type: offer.type, sdp: offer.sdp } });
-
-        // 🌟 answerが書き込まれたら着信を検知 → 着信UI表示
-        let hasAnswer = false;
-        roomRef.onSnapshot(async snap => {
-            const data = snap.data();
-            if (!hasAnswer && data?.answer && data?.callerNumber) {
-                hasAnswer = true;
-                // answerをセット（WebRTC接続準備）
-                await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
-                // 着信UIを表示
-                showIncomingUI(data.callerNumber);
-            }
-        });
-
-        roomRef.collection('calleeCandidates').onSnapshot(snap => {
-            snap.docChanges().forEach(change => {
-                if (change.type === 'added') pc.addIceCandidate(new RTCIceCandidate(change.doc.data()));
-            });
-        });
-    }
-
-    // =====================
-    // 発信
-    // =====================
-    async function call() {
-        const targetId = display.innerText;
-        if (targetId.length < 1) return;
-        statusEl.innerText = "発信中...";
-        const roomRef = db.collection('rooms').doc(targetId);
-        const roomSnapshot = await roomRef.get();
-        if (!roomSnapshot.exists) { playGuidance(); return; }
-
-        watchRoom(targetId);
-        createPC();
-
-        pc.onicecandidate = e => e.candidate && roomRef.collection('calleeCandidates').add(e.candidate.toJSON());
-        const data = roomSnapshot.data();
-        await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-
-        // 🌟 自分の番号を一緒に書き込む（相手が着信表示するため）
-        await roomRef.update({ answer: { type: answer.type, sdp: answer.sdp }, callerNumber: MY_NUMBER });
-
-        // 🌟 コール音開始
-        startRingback();
-        statusEl.innerText = "呼び出し中... 🔔";
-
-        roomRef.collection('callerCandidates').onSnapshot(snap => {
-            snap.docChanges().forEach(change => {
-                if (change.type === 'added') pc.addIceCandidate(new RTCIceCandidate(change.doc.data()));
-            });
-        });
-    }
-
-    // =====================
-    // 切断
-    // =====================
-    async function hangup(cleanUpDb = true) {
-        speechSynthesis.cancel();
-        stopRingback();
-        stopRingtone();
-        if (unsubscribeRoom) unsubscribeRoom();
-
-        if (cleanUpDb && currentRoomId) {
-            await db.collection('rooms').doc(currentRoomId).delete();
+    onValue(ref(db, `calls/${myNum}`), (snap) => {
+        const d = snap.val();
+        if (d && d.status === 'ringing') {
+            targetNum = d.from;
+            document.getElementById('inc-num').innerText = targetNum;
+            show('incoming-screen');
+        } else if (d && d.status === 'connected') {
+            document.getElementById('call-timer').innerText = "通話中...";
+        } else if (!d) {
+            show('dialer-screen');
         }
+    });
 
-        if (pc) { pc.close(); pc = null; }
-        location.reload();
-    }
-
-    // =====================
-    // WebRTC PeerConnection
-    // =====================
-    function createPC() {
-        pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
-        pc.ontrack = e => { remoteAudio.srcObject = e.streams[0]; };
-        if (localStream) localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-        pc.onconnectionstatechange = () => {
-            if (pc.connectionState === 'connected') {
-                // 🌟 接続確立 → コール音停止
-                stopRingback();
-                hideIncomingUI();
-                startTimer();
-                setInCallVisuals(true);
-                document.getElementById('dialerUI').style.display = "none";
-                document.getElementById('backspaceBtn').style.display = "none";
-                document.getElementById('callBtn').style.display = "none";
-                document.getElementById('inCallUI').style.display = "grid";
-                document.getElementById('hangupBtn').style.display = "flex";
-            }
-        };
-    }
-
-    // =====================
-    // キーパッド
-    // =====================
-    function press(num) {
-        playDTMF(num); // 🌟 DTMFトーン
-        let current = display.innerText.replace(/-/g, "");
-        if (current.length >= 11) return;
-        current += num;
-        let formatted = "";
-        if (current.length > 3 && current.length <= 7) formatted = current.slice(0, 3) + "-" + current.slice(3);
-        else if (current.length > 7) formatted = current.slice(0, 3) + "-" + current.slice(3, 7) + "-" + current.slice(7);
-        else formatted = current;
-        display.innerText = formatted;
-    }
-
-    function backspace() {
-        let current = display.innerText.replace(/-/g, "").slice(0, -1);
-        display.innerText = "";
-        for(let n of current) { 
-            let c = display.innerText.replace(/-/g, "");
-            c += n;
-            let formatted = "";
-            if (c.length > 3 && c.length <= 7) formatted = c.slice(0, 3) + "-" + c.slice(3);
-            else if (c.length > 7) formatted = c.slice(0, 3) + "-" + c.slice(3, 7) + "-" + c.slice(7);
-            else formatted = c;
-            display.innerText = formatted;
-        }
-    }
-
-    // =====================
-    // UI ヘルパー
-    // =====================
-    function setInCallVisuals(isActive) {
-        const overlay = document.getElementById('bg-overlay');
-        const container = document.getElementById('mainContainer');
-        if (isActive) { overlay.style.opacity = "1"; container.classList.add('in-call-active'); document.body.style.background = "#000"; }
-        else { overlay.style.opacity = "0"; container.classList.remove('in-call-active'); document.body.style.background = "#fff"; clearInterval(timerInterval); }
-    }
-
-    function startTimer() {
-        if (timerInterval) return;
-        let secondsElapsed = 0;
-        timerInterval = setInterval(() => {
-            secondsElapsed++;
-            const mins = String(Math.floor(secondsElapsed / 60)).padStart(2, '0');
-            const secs = String(secondsElapsed % 60).padStart(2, '0');
-            statusEl.innerText = `通話中 ${mins}:${secs}`;
-        }, 1000);
-    }
-
-    function toggleMute() { localStream.getAudioTracks()[0].enabled = !localStream.getAudioTracks()[0].enabled; document.getElementById('muteCircle').classList.toggle('active-mode'); }
-    function toggleSpeaker() { document.getElementById('speakerCircle').classList.toggle('active-mode'); }
-    function showKeypadInCall() { document.getElementById('inCallUI').style.display = "none"; document.getElementById('dialerUI').style.display = "block"; document.getElementById('hideBtn').style.display = "block"; }
-    function hideKeypadInCall() { document.getElementById('dialerUI').style.display = "none"; document.getElementById('inCallUI').style.display = "grid"; document.getElementById('hideBtn').style.display = "none"; }
-    function playGuidance() { const uttr = new SpeechSynthesisUtterance("おかけになった電話番号は、現在使われておりません。"); uttr.lang = "ja-JP"; speechSynthesis.speak(uttr); statusEl.innerText = "接続できません"; uttr.onend = () => { setTimeout(() => hangup(false), 1000); }; }
+    setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }, 1000);
 </script>
 </body>
 </html>
