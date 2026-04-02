@@ -66,8 +66,11 @@
             html, body {
                 background: #000;
                 height: 100dvh;
+                width: 100vw;
             }
             body::before { display: none; }
+
+            /* iPhoneフレームをフル画面に */
             #iphone-4s {
                 width: 100vw;
                 height: 100dvh;
@@ -75,17 +78,77 @@
                 border-radius: 0;
                 box-shadow: none;
             }
+
+            /* ステータスバーを非表示（ノッチに隠れるので） */
             #status-bar {
-                padding-top: env(safe-area-inset-top);
-                height: calc(20px + env(safe-area-inset-top));
+                display: none !important;
             }
+
+            /* 各画面はノッチ下から始める */
             .screen {
-                padding-top: calc(20px + env(safe-area-inset-top)) !important;
+                padding-top: env(safe-area-inset-top) !important;
+                height: 100% !important;
             }
+
+            /* 自分の番号エリアをノッチ直下に */
+            #my-num-area {
+                padding-top: 6px;
+                font-size: 13px;
+            }
+            #my-num-text {
+                font-size: 18px;
+            }
+
+            /* 入力エリア */
+            #display-area {
+                height: 70px;
+            }
+
+            /* キーパッドを画面いっぱいに使う */
+            #keypad {
+                flex: 1;
+            }
+            .key {
+                height: 68px;
+            }
+
+            /* 発信ボタンエリア */
+            #call-footer {
+                height: calc(60px + env(safe-area-inset-bottom));
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+            #call-btn {
+                width: 90%;
+            }
+
+            /* タブバー */
             #tab-bar {
                 padding-bottom: env(safe-area-inset-bottom);
-                height: calc(44px + env(safe-area-inset-bottom));
+                height: calc(50px + env(safe-area-inset-bottom));
             }
+            .tab-item {
+                font-size: 11px;
+            }
+            .tab-icon {
+                font-size: 22px;
+            }
+
+            /* 連絡先画面 */
+            #contacts-screen .screen-header {
+                margin-top: 0;
+                height: 50px;
+                font-size: 16px;
+            }
+            #contact-list {
+                height: calc(100dvh - env(safe-area-inset-top) - 50px - calc(50px + env(safe-area-inset-bottom)));
+            }
+            .contact-item {
+                padding: 14px 18px;
+            }
+            .contact-name { font-size: 16px; }
+            .contact-num  { font-size: 13px; }
+            .contact-avatar { width: 44px; height: 44px; font-size: 20px; }
+
             #pc-hint { display: none; }
         }
 
@@ -127,7 +190,13 @@
         .screen.active { display: block; }
 
         /* ===== ダイヤル画面 ===== */
-        #dialer-screen { background: radial-gradient(circle, #3c4b5d 0%, #1a232e 100%); }
+        #dialer-screen {
+            background: radial-gradient(circle, #3c4b5d 0%, #1a232e 100%);
+            display: flex;
+            flex-direction: column;
+        }
+        #dialer-screen #keypad { flex: 1; }
+        #dialer-screen #call-footer { flex-shrink: 0; }
 
         /* 自分の番号エリア */
         #my-num-area {
