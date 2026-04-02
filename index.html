@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Phone - iOS 6 Config Fixed</title>
+    <title>Phone - iOS 6</title>
     <style>
         :root {
             --ios-green: linear-gradient(to bottom, #74d68e 0%, #2e9e44 100%);
@@ -17,8 +17,6 @@
         .sb-left { display: flex; align-items: center; gap: 4px; width: 100px; }
         .sb-center { position: absolute; left: 50%; transform: translateX(-50%); font-weight: bold; }
         .sb-right { flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 3px; }
-        .antenna { display: flex; align-items: flex-end; gap: 1px; height: 10px; }
-        .bar { width: 3px; background: #fff; }
         .battery { width: 18px; height: 8px; border: 1px solid #ccc; background: #4cd964; }
         .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; padding-top: 20px; display: none; }
         .screen.active { display: block; }
@@ -47,7 +45,6 @@
 <div id="iphone-4s">
     <div id="status-bar">
         <div class="sb-left">
-            <div class="antenna"><div class="bar" style="height:4px;"></div><div class="bar" style="height:6px;"></div><div class="bar" style="height:8px;"></div><div class="bar" style="height:10px;"></div></div>
             <span>docomo 3G</span>
         </div>
         <div class="sb-center" id="clock">12:00</div>
@@ -56,7 +53,7 @@
 
     <div id="dialer-screen" class="screen active">
         <div style="font-size:10px; text-align:center; padding:5px 0 2px 0; background:rgba(0,0,0,0.3); color:#ccc;">
-            My: <span id="my-num-text">設定中...</span>
+            自分: <span id="my-num-text">設定中...</span>
         </div>
         <div id="display-area">
             <div id="input-number"></div>
@@ -86,7 +83,7 @@
             <div style="color:#aaa; font-size:13px;">携帯電話</div>
         </div>
         <div class="incoming-actions">
-            <button class="btn-call" style="background:var(--ios-red)" onclick="endCall()">拒否</button>
+            <button class="btn-call" style="background:var(--ios-red)" onclick="rejectCall()">拒否</button>
             <button class="btn-call" style="background:var(--ios-green)" onclick="answerCall()">応答</button>
         </div>
     </div>
@@ -94,7 +91,7 @@
     <div id="calling-screen" class="screen">
         <div style="margin-top:50px; text-align:center;">
             <div id="active-num" style="font-size:28px;">---</div>
-            <div id="call-timer" style="color:#4cd964;">発信中...</div>
+            <div id="call-timer" style="color:#4cd964; margin-top:8px;">発信中...</div>
         </div>
         <div class="call-grid">
             <div class="grid-item"><div class="grid-btn">🔇</div>消音</div>
@@ -110,83 +107,151 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, set, onValue, remove, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    // お送りいただいた Firebase 設定を適用
     const firebaseConfig = {
-      apiKey: "AIzaSyBaMe4Cz_3W75F5NCtioAguONgukg3-k0g",
-      authDomain: "my-call-14d70.firebaseapp.com",
-      projectId: "my-call-14d70",
-      storageBucket: "my-call-14d70.firebasestorage.app",
-      messagingSenderId: "769393584037",
-      appId: "1:769393584037:web:279aa04477f2649230ea4c",
-      measurementId: "G-EXHXKKRT56",
-      databaseURL: "https://my-call-14d70-default-rtdb.firebaseio.com" // URLも統合
+        apiKey: "AIzaSyBaMe4Cz_3W75F5NCtioAguONgukg3-k0g",
+        authDomain: "my-call-14d70.firebaseapp.com",
+        projectId: "my-call-14d70",
+        storageBucket: "my-call-14d70.firebasestorage.app",
+        messagingSenderId: "769393584037",
+        appId: "1:769393584037:web:279aa04477f2649230ea4c",
+        databaseURL: "https://my-call-14d70-default-rtdb.firebaseio.com"
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
+    // 自分の番号（ローカル保存）
     let myNum = localStorage.getItem('assigned_num') || `090${Math.floor(10000000 + Math.random() * 90000000)}`;
     localStorage.setItem('assigned_num', myNum);
     document.getElementById('my-num-text').innerText = myNum;
 
     let targetNum = "";
+    let timerInterval = null;
+    let timerSeconds = 0;
 
     function show(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
     }
 
-    const dtmfFreqs = { '1':[697,1209], '2':[697,1336], '3':[697,1477], '4':[770,1209], '5':[770,1336], '6':[770,1477], '7':[852,1209], '8':[852,1336], '9':[852,1477], '*': [941,1209], '0':[941,1336], '#':[941,1477] };
+    function startTimer() {
+        stopTimer();
+        timerSeconds = 0;
+        document.getElementById('call-timer').innerText = "通話中... 0:00";
+        timerInterval = setInterval(() => {
+            timerSeconds++;
+            const m = Math.floor(timerSeconds / 60);
+            const s = String(timerSeconds % 60).padStart(2, '0');
+            document.getElementById('call-timer').innerText = `通話中... ${m}:${s}`;
+        }, 1000);
+    }
+
+    function stopTimer() {
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+    }
+
+    const dtmfFreqs = { '1':[697,1209], '2':[697,1336], '3':[697,1477], '4':[770,1209], '5':[770,1336], '6':[770,1477], '7':[852,1209], '8':[852,1336], '9':[852,1477], '*':[941,1209], '0':[941,1336], '#':[941,1477] };
 
     window.press = (n) => {
         if (audioCtx.state === 'suspended') audioCtx.resume();
         const g = audioCtx.createGain(); g.gain.value = 0.1; g.connect(audioCtx.destination);
-        dtmfFreqs[n].forEach(f => { const o = audioCtx.createOscillator(); o.frequency.value = f; o.connect(g); o.start(); o.stop(audioCtx.currentTime+0.1); });
+        dtmfFreqs[n].forEach(f => {
+            const o = audioCtx.createOscillator(); o.frequency.value = f; o.connect(g); o.start(); o.stop(audioCtx.currentTime + 0.1);
+        });
         document.getElementById('input-number').innerText += n;
     };
 
-    window.backspace = () => { document.getElementById('input-number').innerText = document.getElementById('input-number').innerText.slice(0, -1); };
-
-    window.startCall = async () => {
-        const input = document.getElementById('input-number').innerText;
-        if (!input || input === myNum) return;
-        targetNum = input;
-        document.getElementById('active-num').innerText = targetNum;
-        show('calling-screen');
-        await set(ref(db, `calls/${targetNum}`), { from: myNum, status: 'ringing' });
+    window.backspace = () => {
+        const el = document.getElementById('input-number');
+        el.innerText = el.innerText.slice(0, -1);
     };
 
+    // ========== 発信 ==========
+    window.startCall = async () => {
+        const input = document.getElementById('input-number').innerText.trim();
+        if (!input || input === myNum) return;
+        targetNum = input;
+
+        document.getElementById('active-num').innerText = targetNum;
+        document.getElementById('call-timer').innerText = "発信中...";
+        show('calling-screen');
+
+        // calls/{相手番号} に「ringing」を書き込む → 相手が検知して着信画面へ
+        await set(ref(db, `calls/${targetNum}`), { from: myNum, status: 'ringing' });
+
+        // 発信側: 相手が応答したか (calls/{自分番号}/status == 'connected') を監視
+        // ※ answerCall() 内で calls/{自分番号} を connected に更新する
+    };
+
+    // ========== 応答 ==========
     window.answerCall = async () => {
         show('calling-screen');
-        document.getElementById('call-timer').innerText = "通話中...";
+        document.getElementById('active-num').innerText = targetNum;
+        startTimer();
+
+        // calls/{自分番号} を connected に → 発信側の監視リスナーが検知
         await set(ref(db, `calls/${myNum}`), { from: targetNum, status: 'connected' });
     };
 
-    window.endCall = async () => {
+    // ========== 拒否 ==========
+    window.rejectCall = async () => {
         show('dialer-screen');
-        document.getElementById('input-number').innerText = "";
+        // calls/{自分番号} を削除 → 発信側がリスナーで検知して終了
         await remove(ref(db, `calls/${myNum}`));
-        if (targetNum) await remove(ref(db, `calls/${targetNum}`));
         targetNum = "";
     };
 
+    // ========== 終了 ==========
+    window.endCall = async () => {
+        stopTimer();
+        show('dialer-screen');
+        document.getElementById('input-number').innerText = "";
+
+        const prevTarget = targetNum;
+        targetNum = "";
+
+        // 自分側のレコードを削除
+        await remove(ref(db, `calls/${myNum}`));
+        // 相手側のレコードも削除（相手のリスナーが検知して終了）
+        if (prevTarget) await remove(ref(db, `calls/${prevTarget}`));
+    };
+
+    // ========== 着信監視（自分宛て） ==========
     onValue(ref(db, `calls/${myNum}`), (snap) => {
         const d = snap.val();
-        if (d && d.status === 'ringing') {
+
+        if (!d) {
+            // レコードが消えた → 相手が切った
+            if (timerInterval) {
+                stopTimer();
+                show('dialer-screen');
+                targetNum = "";
+            }
+            return;
+        }
+
+        if (d.status === 'ringing') {
+            // 着信
             targetNum = d.from;
             document.getElementById('inc-num').innerText = targetNum;
             show('incoming-screen');
-        } else if (d && d.status === 'connected') {
-            document.getElementById('call-timer').innerText = "通話中...";
-        } else if (!d) {
-            show('dialer-screen');
+
+        } else if (d.status === 'connected') {
+            // 発信側が「相手が応答した」ことを検知
+            startTimer();
         }
     });
 
-    setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }, 1000);
+    // ========== 時計 ==========
+    setInterval(() => {
+        document.getElementById('clock').innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }, 1000);
 </script>
 </body>
 </html>
