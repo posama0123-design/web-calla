@@ -37,8 +37,9 @@
         .btn-call { width: 125px; height: 48px; border-radius: 8px; font-weight: bold; font-size: 18px; color: #fff; border: 1px solid #000; cursor: pointer; }
         #calling-screen { background: #1c1c1c; }
         .call-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 30px; width: 85%; margin-left: auto; margin-right: auto; }
-        .grid-item { display: flex; flex-direction: column; align-items: center; font-size: 11px; color: #fff; }
+        .grid-item { display: flex; flex-direction: column; align-items: center; font-size: 11px; color: #fff; cursor: pointer; }
         .grid-btn { width: 55px; height: 55px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.3); background: var(--ios-btn); display: flex; justify-content: center; align-items: center; font-size: 20px; margin-bottom: 5px; }
+        .grid-btn.active { background: rgba(255,255,255,0.4); border-color: #fff; }
         #hangup-btn { width: 280px; height: 48px; background: var(--ios-red); border-radius: 10px; color: white; font-size: 20px; font-weight: bold; margin-top: 40px; border: 1px solid #600; cursor: pointer; }
     </style>
 </head>
@@ -97,9 +98,9 @@
             <div id="call-timer" style="color:#4cd964; margin-top:8px;">発信中...</div>
         </div>
         <div class="call-grid">
-            <div class="grid-item"><div class="grid-btn">🔇</div>消音</div>
+            <div class="grid-item" onclick="toggleMute()"><div class="grid-btn" id="mute-btn">🔇</div>消音</div>
             <div class="grid-item"><div class="grid-btn">⌨️</div>キーパッド</div>
-            <div class="grid-item"><div class="grid-btn">🔊</div>スピーカー</div>
+            <div class="grid-item" onclick="toggleSpeaker()"><div class="grid-btn" id="speaker-btn">🔊</div>スピーカー</div>
             <div class="grid-item"><div class="grid-btn">➕</div>通話を追加</div>
             <div class="grid-item"><div class="grid-btn">🎥</div>FaceTime</div>
             <div class="grid-item"><div class="grid-btn">👤</div>連絡先</div>
@@ -108,9 +109,11 @@
     </div>
 </div>
 
+<audio id="remote-audio" autoplay playsinline style="display:none;"></audio>
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, set, onValue, remove, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, set, onValue, remove, push, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyBaMe4Cz_3W75F5NCtioAguONgukg3-k0g",
@@ -119,14 +122,21 @@
         storageBucket: "my-call-14d70.firebasestorage.app",
         messagingSenderId: "769393584037",
         appId: "1:769393584037:web:279aa04477f2649230ea4c",
+        measurementId: "G-EXHXKKRT56",
         databaseURL: "https://my-call-14d70-default-rtdb.firebaseio.com"
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-    // 自分の番号（ローカル保存）
+    const iceConfig = {
+        iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' }
+        ]
+    };
+
     let myNum = localStorage.getItem('assigned_num') || `090${Math.floor(10000000 + Math.random() * 90000000)}`;
     localStorage.setItem('assigned_num', myNum);
     document.getElementById('my-num-text').innerText = myNum;
@@ -134,7 +144,15 @@
     let targetNum = "";
     let timerInterval = null;
     let timerSeconds = 0;
+    let pc = null;
+    let localStream = null;
+    let isMuted = false;
+    let callId = "";
+    let isCallerRole = false;
+    let answerUnsub = null;
+    let iceUnsubs = [];
 
+    // ========== UI ==========
     function show(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
@@ -153,20 +171,17 @@
     }
 
     function stopTimer() {
-        if (timerInterval) {
-            clearInterval(timerInterval);
-            timerInterval = null;
-        }
+        if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
     }
 
-    const dtmfFreqs = { '1':[697,1209], '2':[697,1336], '3':[697,1477], '4':[770,1209], '5':[770,1336], '6':[770,1477], '7':[852,1209], '8':[852,1336], '9':[852,1477], '*':[941,1209], '0':[941,1336], '#':[941,1477] };
+    // ========== DTMF ==========
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const dtmfFreqs = { '1':[697,1209],'2':[697,1336],'3':[697,1477],'4':[770,1209],'5':[770,1336],'6':[770,1477],'7':[852,1209],'8':[852,1336],'9':[852,1477],'*':[941,1209],'0':[941,1336],'#':[941,1477] };
 
     window.press = (n) => {
         if (audioCtx.state === 'suspended') audioCtx.resume();
         const g = audioCtx.createGain(); g.gain.value = 0.1; g.connect(audioCtx.destination);
-        dtmfFreqs[n].forEach(f => {
-            const o = audioCtx.createOscillator(); o.frequency.value = f; o.connect(g); o.start(); o.stop(audioCtx.currentTime + 0.1);
-        });
+        dtmfFreqs[n].forEach(f => { const o = audioCtx.createOscillator(); o.frequency.value = f; o.connect(g); o.start(); o.stop(audioCtx.currentTime + 0.1); });
         document.getElementById('input-number').innerText += n;
     };
 
@@ -175,79 +190,198 @@
         el.innerText = el.innerText.slice(0, -1);
     };
 
+    // ========== WebRTC ==========
+    async function getMic() {
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    }
+
+    function createPC() {
+        if (pc) { pc.close(); }
+        pc = new RTCPeerConnection(iceConfig);
+
+        pc.ontrack = (e) => {
+            const audio = document.getElementById('remote-audio');
+            if (audio.srcObject !== e.streams[0]) audio.srcObject = e.streams[0];
+        };
+
+        pc.onicecandidate = async (e) => {
+            if (e.candidate && callId) {
+                const role = isCallerRole ? 'callerIce' : 'calleeIce';
+                await push(ref(db, `calls/${callId}/${role}`), e.candidate.toJSON());
+            }
+        };
+
+        pc.onconnectionstatechange = () => {
+            if (pc && (pc.connectionState === 'failed' || pc.connectionState === 'disconnected')) {
+                endCall();
+            }
+        };
+    }
+
+    function addTracks() {
+        localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+    }
+
+    function listenRemoteIce(role) {
+        const seenKeys = new Set();
+        const unsub = onValue(ref(db, `calls/${callId}/${role}`), snap => {
+            if (!snap.exists() || !pc) return;
+            snap.forEach(ch => {
+                if (seenKeys.has(ch.key)) return;
+                seenKeys.add(ch.key);
+                try { pc.addIceCandidate(new RTCIceCandidate(ch.val())); } catch(e) {}
+            });
+        });
+        iceUnsubs.push(unsub);
+    }
+
+    function cleanupListeners() {
+        if (answerUnsub) { answerUnsub(); answerUnsub = null; }
+        iceUnsubs.forEach(u => u());
+        iceUnsubs = [];
+    }
+
+    function cleanupPeer() {
+        cleanupListeners();
+        if (pc) { pc.close(); pc = null; }
+        if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+        document.getElementById('remote-audio').srcObject = null;
+        isMuted = false;
+        document.getElementById('mute-btn').classList.remove('active');
+        document.getElementById('speaker-btn').classList.remove('active');
+    }
+
     // ========== 発信 ==========
     window.startCall = async () => {
         const input = document.getElementById('input-number').innerText.trim();
         if (!input || input === myNum) return;
         targetNum = input;
+        isCallerRole = true;
+        callId = `${myNum}_${targetNum}`;
 
         document.getElementById('active-num').innerText = targetNum;
         document.getElementById('call-timer').innerText = "発信中...";
         show('calling-screen');
 
-        // calls/{相手番号} に「ringing」を書き込む → 相手が検知して着信画面へ
-        await set(ref(db, `calls/${targetNum}`), { from: myNum, status: 'ringing' });
+        try { await getMic(); } catch(e) {
+            alert("マイクの許可が必要です"); show('dialer-screen'); return;
+        }
 
-        // 発信側: 相手が応答したか (calls/{自分番号}/status == 'connected') を監視
-        // ※ answerCall() 内で calls/{自分番号} を connected に更新する
+        createPC();
+        addTracks();
+
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+
+        await set(ref(db, `calls/${callId}`), {
+            from: myNum, to: targetNum, status: 'ringing',
+            offer: { type: offer.type, sdp: offer.sdp }
+        });
+
+        // 相手ICE候補を監視
+        listenRemoteIce('calleeIce');
+
+        // answerを監視
+        answerUnsub = onValue(ref(db, `calls/${callId}/answer`), async snap => {
+            if (!snap.exists() || !pc) return;
+            if (pc.signalingState !== 'have-local-offer') return;
+            await pc.setRemoteDescription(new RTCSessionDescription(snap.val()));
+            startTimer();
+        });
     };
 
     // ========== 応答 ==========
     window.answerCall = async () => {
+        isCallerRole = false;
         show('calling-screen');
         document.getElementById('active-num').innerText = targetNum;
-        startTimer();
+        document.getElementById('call-timer').innerText = "接続中...";
 
-        // calls/{自分番号} を connected に → 発信側の監視リスナーが検知
-        await set(ref(db, `calls/${myNum}`), { from: targetNum, status: 'connected' });
+        try { await getMic(); } catch(e) {
+            alert("マイクの許可が必要です"); show('dialer-screen'); return;
+        }
+
+        createPC();
+        addTracks();
+
+        const snap = await get(ref(db, `calls/${callId}/offer`));
+        await pc.setRemoteDescription(new RTCSessionDescription(snap.val()));
+
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+
+        await set(ref(db, `calls/${callId}/answer`), { type: answer.type, sdp: answer.sdp });
+        await set(ref(db, `calls/${callId}/status`), 'connected');
+
+        listenRemoteIce('callerIce');
+        startTimer();
     };
 
     // ========== 拒否 ==========
     window.rejectCall = async () => {
+        await set(ref(db, `calls/${callId}/status`), 'rejected');
+        setTimeout(() => remove(ref(db, `calls/${callId}`)), 1000);
+        callId = ""; targetNum = "";
         show('dialer-screen');
-        // calls/{自分番号} を削除 → 発信側がリスナーで検知して終了
-        await remove(ref(db, `calls/${myNum}`));
-        targetNum = "";
     };
 
     // ========== 終了 ==========
     window.endCall = async () => {
         stopTimer();
+        cleanupPeer();
         show('dialer-screen');
         document.getElementById('input-number').innerText = "";
 
-        const prevTarget = targetNum;
+        if (callId) {
+            const cid = callId; callId = "";
+            await set(ref(db, `calls/${cid}/status`), 'ended');
+            setTimeout(() => remove(ref(db, `calls/${cid}`)), 1000);
+        }
         targetNum = "";
-
-        // 自分側のレコードを削除
-        await remove(ref(db, `calls/${myNum}`));
-        // 相手側のレコードも削除（相手のリスナーが検知して終了）
-        if (prevTarget) await remove(ref(db, `calls/${prevTarget}`));
     };
 
-    // ========== 着信監視（自分宛て） ==========
-    onValue(ref(db, `calls/${myNum}`), (snap) => {
-        const d = snap.val();
+    // ========== 消音 ==========
+    window.toggleMute = () => {
+        if (!localStream) return;
+        isMuted = !isMuted;
+        localStream.getAudioTracks().forEach(t => t.enabled = !isMuted);
+        document.getElementById('mute-btn').classList.toggle('active', isMuted);
+    };
 
-        if (!d) {
-            // レコードが消えた → 相手が切った
-            if (timerInterval) {
-                stopTimer();
-                show('dialer-screen');
-                targetNum = "";
+    // ========== スピーカー ==========
+    window.toggleSpeaker = () => {
+        const audio = document.getElementById('remote-audio');
+        const btn = document.getElementById('speaker-btn');
+        const on = btn.classList.toggle('active');
+        if (audio.setSinkId) audio.setSinkId(on ? '' : 'default').catch(() => {});
+    };
+
+    // ========== 全通話の監視（着信検知） ==========
+    onValue(ref(db, 'calls'), snap => {
+        if (!snap.exists()) return;
+
+        snap.forEach(callSnap => {
+            const d = callSnap.val();
+            if (!d) return;
+            const cid = callSnap.key;
+
+            // 自分宛の着信
+            if (d.to === myNum && d.status === 'ringing' && !callId) {
+                callId = cid;
+                targetNum = d.from;
+                document.getElementById('inc-num').innerText = targetNum;
+                show('incoming-screen');
             }
-            return;
-        }
 
-        if (d.status === 'ringing') {
-            // 着信
-            targetNum = d.from;
-            document.getElementById('inc-num').innerText = targetNum;
-            show('incoming-screen');
+            // 通話中に相手が切った or 拒否された
+            if (cid === callId && (d.status === 'ended' || d.status === 'rejected')) {
+                if (timerInterval || isCallerRole) endCall();
+            }
+        });
 
-        } else if (d.status === 'connected') {
-            // 発信側が「相手が応答した」ことを検知
-            startTimer();
+        // callIdのレコードが消えた
+        if (callId && !snap.hasChild(callId) && (timerInterval || isCallerRole)) {
+            endCall();
         }
     });
 
