@@ -17,6 +17,8 @@
         .sb-left { display: flex; align-items: center; gap: 4px; width: 100px; }
         .sb-center { position: absolute; left: 50%; transform: translateX(-50%); font-weight: bold; }
         .sb-right { flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 3px; }
+        .antenna { display: flex; align-items: flex-end; gap: 1px; height: 10px; }
+        .bar { width: 3px; background: #fff; }
         .battery { width: 18px; height: 8px; border: 1px solid #ccc; background: #4cd964; }
         .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; padding-top: 20px; display: none; }
         .screen.active { display: block; }
@@ -45,6 +47,7 @@
 <div id="iphone-4s">
     <div id="status-bar">
         <div class="sb-left">
+            <div class="antenna"><div class="bar" style="height:4px;"></div><div class="bar" style="height:6px;"></div><div class="bar" style="height:8px;"></div><div class="bar" style="height:10px;"></div></div>
             <span>docomo 3G</span>
         </div>
         <div class="sb-center" id="clock">12:00</div>
