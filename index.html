@@ -6,120 +6,133 @@
     <title>IP-callservice</title>
     <style>
         * { -webkit-tap-highlight-color: transparent; outline: none; box-sizing: border-box; }
-        body { font-family: -apple-system, "Helvetica Neue", sans-serif; background: #ffffff; color: #333; display: flex; flex-direction: column; height: 100vh; margin: 0; overflow: hidden; }
+        body { font-family: -apple-system, "Helvetica Neue", sans-serif; background: #fff; color: #000; margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
-        /* --- レイアウト --- */
-        .phone-container { flex: 1; display: flex; flex-direction: column; position: relative; width: 100%; max-width: 400px; margin: 0 auto; }
-        .tab-content { display: none; flex: 1; padding: 20px; flex-direction: column; }
-        .tab-content.active { display: flex; }
+        /* --- 通用スタイル --- */
+        .header-info { padding: 15px; text-align: center; color: #888; font-size: 13px; }
+        .display-area { height: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .display-number { font-size: 40px; font-weight: 300; letter-spacing: -1px; }
 
-        /* --- キーパッド表示部 --- */
-        .display-area { text-align: center; margin-top: 40px; margin-bottom: 20px; height: 120px; }
-        .display-number { font-size: 36px; font-weight: 300; min-height: 54px; }
-        .sub-label { font-size: 14px; color: #888; margin-top: 5px; }
-
-        .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: auto; max-width: 280px; }
-        .key { width: 75px; height: 75px; background: #f2f2f7; border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; user-select: none; }
+        /* --- キーパッド --- */
+        .tab-content { display: none; flex: 1; padding: 0 20px; }
+        .tab-content.active { display: block; }
+        .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 20px; margin: 0 auto; max-width: 280px; }
+        .key { width: 75px; height: 75px; background: #f2f2f7; border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; }
         .key:active { background: #d1d1d6; }
-        .key .num { font-size: 32px; }
-        .key .abc { font-size: 10px; font-weight: bold; color: #aaa; }
+        .key .num { font-size: 34px; line-height: 1; }
+        .key .abc { font-size: 10px; font-weight: 700; color: #aaa; margin-top: 2px; }
 
-        /* --- iOS 9風 着信画面 --- */
-        #incoming-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; color: #fff; z-index: 1000; display: none; flex-direction: column; align-items: center; justify-content: space-between; padding: 60px 0; background-image: linear-gradient(to bottom, rgba(0,0,0,0.5), rgba(0,0,0,0.8)), url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80'); background-size: cover; }
-        .incoming-info { text-align: center; }
-        .incoming-number { font-size: 32px; margin-bottom: 10px; }
-        .incoming-type { font-size: 18px; color: #ccc; }
+        /* --- iOS 9風 着信UI --- */
+        #incoming-screen { 
+            position: fixed; top:0; left:0; width:100%; height:100%; 
+            background: #000 url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80') center/cover; 
+            z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: space-between; color: #fff; padding: 80px 0 60px;
+        }
+        .caller-info { text-align: center; }
+        .caller-name { font-size: 36px; font-weight: 300; margin-bottom: 8px; }
+        .slider-track { 
+            width: 280px; height: 72px; background: rgba(255,255,255,0.1); 
+            border-radius: 36px; position: relative; display: flex; align-items: center; padding: 4px; backdrop-filter: blur(15px);
+        }
+        .slider-text { width: 100%; text-align: center; position: absolute; left: 20px; font-size: 18px; color: #fff; animation: shine 2s infinite; }
+        .slider-knob { width: 64px; height: 64px; background: #4cd964; border-radius: 50%; display: flex; justify-content: center; align-items: center; z-index: 2; cursor: pointer; position: absolute; left: 4px; }
+        @keyframes shine { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
 
-        .slider-container { background: rgba(255,255,255,0.1); width: 80%; height: 60px; border-radius: 30px; position: relative; display: flex; align-items: center; padding: 5px; margin-bottom: 50px; }
-        .slider-text { width: 100%; text-align: center; color: #fff; font-size: 18px; position: absolute; pointer-events: none; }
-        .slider-handle { width: 50px; height: 50px; background: #4cd964; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; position: absolute; left: 5px; z-index: 2; transition: transform 0.1s; }
+        /* --- 通話中UI (刷新) --- */
+        #incall-screen { 
+            position: fixed; top:0; left:0; width:100%; height:100%; 
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(40px) brightness(0.6); 
+            z-index: 1500; display: none; flex-direction: column; align-items: center; color: #fff; padding-top: 80px;
+        }
+        .incall-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px 30px; margin-top: 60px; width: 280px; }
+        .incall-btn-wrapper { display: flex; flex-direction: column; align-items: center; font-size: 12px; }
+        .incall-circle { 
+            width: 72px; height: 72px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.4); 
+            display: flex; justify-content: center; align-items: center; background: rgba(255,255,255,0.1); margin-bottom: 8px;
+        }
+        .incall-circle svg { width: 32px; height: 32px; fill: #fff; }
+        .hangup-btn { 
+            width: 75px; height: 75px; background: #ff3b30; border-radius: 50%; display: flex; 
+            justify-content: center; align-items: center; border: none; margin-top: 80px; cursor: pointer;
+        }
 
-        /* --- 通話中画面 --- */
-        #incall-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; color: #fff; z-index: 900; display: none; flex-direction: column; align-items: center; padding-top: 60px; }
-        .incall-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-top: 50px; }
-        .circle-btn { width: 70px; height: 70px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.3); display: flex; justify-content: center; align-items: center; background: rgba(255,255,255,0.1); margin-bottom: 8px; }
-        .circle-btn svg { width: 30px; height: 30px; fill: #fff; }
-        .hangup-btn { background: #ff3b30 !important; border: none !important; margin-top: 50px; }
-
-        /* --- タブバー --- */
-        .tab-bar { display: flex; justify-content: space-around; background: #f9f9f9; border-top: 1px solid #ddd; padding: 10px 0 25px 0; }
-        .tab-item { display: flex; flex-direction: column; align-items: center; font-size: 10px; color: #8e8e93; cursor: pointer; flex: 1; }
+        /* --- ボトムメニュー --- */
+        .tab-bar { display: flex; border-top: 1px solid #ddd; background: #f9f9f9; padding-bottom: 20px; }
+        .tab-item { flex: 1; text-align: center; padding: 10px 0; color: #8e8e93; font-size: 10px; cursor: pointer; }
         .tab-item.active { color: #007aff; }
-        .tab-item svg { width: 25px; height: 25px; margin-bottom: 4px; fill: currentColor; }
+        .tab-icon { font-size: 24px; margin-bottom: 2px; }
 
-        .btn-call-container { display: flex; justify-content: center; align-items: center; margin-top: 20px; position: relative; }
-        .btn-call { background: #4cd964; width: 70px; height: 70px; border-radius: 50%; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center; }
-        .btn-back { position: absolute; right: 15%; background: none; border: none; color: #bbb; font-size: 24px; cursor: pointer; }
+        .call-action-area { display: flex; justify-content: center; align-items: center; padding: 25px 0; position: relative; }
+        .main-call-btn { width: 75px; height: 75px; background: #4cd964; border-radius: 50%; border: none; display: flex; justify-content: center; align-items: center; }
+        .delete-btn { position: absolute; right: 18%; font-size: 28px; color: #bbb; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div class="phone-container">
-    <div id="tab-keypad" class="tab-content active">
-        <div class="display-area">
-            <div class="display-number" id="numberDisplay"></div>
-            <div id="sub-label" class="sub-label"></div>
-        </div>
-        <div class="keypad">
-            <div class="key" onclick="press('1')"><div class="num">1</div><div class="abc">&nbsp;</div></div>
-            <div class="key" onclick="press('2')"><div class="num">2</div><div class="abc">ABC</div></div>
-            <div class="key" onclick="press('3')"><div class="num">3</div><div class="abc">DEF</div></div>
-            <div class="key" onclick="press('4')"><div class="num">4</div><div class="abc">GHI</div></div>
-            <div class="key" onclick="press('5')"><div class="num">5</div><div class="abc">JKL</div></div>
-            <div class="key" onclick="press('6')"><div class="num">6</div><div class="abc">MNO</div></div>
-            <div class="key" onclick="press('7')"><div class="num">7</div><div class="abc">PQRS</div></div>
-            <div class="key" onclick="press('8')"><div class="num">8</div><div class="abc">TUV</div></div>
-            <div class="key" onclick="press('9')"><div class="num">9</div><div class="abc">WXYZ</div></div>
-            <div class="key" onclick="press('*')"><div class="num">*</div><div class="abc">&nbsp;</div></div>
-            <div class="key" onclick="press('0')"><div class="num">0</div><div class="abc">+</div></div>
-            <div class="key" onclick="press('#')"><div class="num">#</div><div class="abc">&nbsp;</div></div>
-        </div>
-        <div class="btn-call-container">
-            <button class="btn-call" onclick="call()">
-                <svg width="35" height="35" fill="white" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
-            </button>
-            <button class="btn-back" onclick="backspace()">⌫</button>
-        </div>
-        <div style="text-align: center; color: #888; font-size: 11px; margin-top: 15px;" id="my-num-info"></div>
-    </div>
-
-    <div id="tab-history" class="tab-content"><h3>履歴</h3></div>
-    <div id="tab-contacts" class="tab-content"><h3>連絡先</h3></div>
-</div>
-
 <div id="incoming-screen">
-    <div class="incoming-info">
-        <div class="incoming-number" id="caller-number-display">080-XXXX-XXXX</div>
-        <div class="incoming-type">携帯電話</div>
+    <div class="caller-info">
+        <div class="caller-name" id="inc-name">080-XXXX-XXXX</div>
+        <div style="font-size: 20px; color: #eee;">携帯電話</div>
     </div>
-    <div class="slider-container">
+    <div class="slider-track">
         <div class="slider-text">スライドして応答</div>
-        <div class="slider-handle" id="sliderHandle">
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="white"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+        <div class="slider-knob" id="sliderKnob">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="white"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
         </div>
     </div>
 </div>
 
 <div id="incall-screen">
-    <div class="incoming-number" id="active-call-number">080-0000-0000</div>
-    <div id="call-duration" style="color: #4cd964; margin-top: 5px;">00:00</div>
+    <div class="caller-name" id="active-name">080-XXXX-XXXX</div>
+    <div id="duration" style="font-size: 18px; margin-top:5px;">00:00</div>
     <div class="incall-grid">
-        <div style="text-align:center"><div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/></svg></div>消音</div>
-        <div style="text-align:center"><div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></div>スピーカー</div>
-        <div style="text-align:center"><div class="circle-btn"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z"/></svg></div>連絡先</div>
+        <div class="incall-btn-wrapper"><div class="incall-circle"><svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/></svg></div>消音</div>
+        <div class="incall-btn-wrapper"><div class="incall-circle"><svg viewBox="0 0 24 24"><path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4z"/></svg></div>キーパッド</div>
+        <div class="incall-btn-wrapper"><div class="incall-circle"><svg viewBox="0 0 24 24"><path d="M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></div>スピーカー</div>
+        <div class="incall-btn-wrapper"><div class="incall-circle"><svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></div>通話を追加</div>
+        <div class="incall-btn-wrapper"><div class="incall-circle"><svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg></div>FaceTime</div>
+        <div class="incall-btn-wrapper"><div class="incall-circle"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z"/></svg></div>連絡先</div>
     </div>
-    <button class="btn-call hangup-btn" onclick="hangup()">
+    <button class="hangup-btn" onclick="hangup()">
         <svg width="35" height="35" fill="white" viewBox="0 0 24 24" style="transform: rotate(135deg);"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
     </button>
 </div>
 
-<div class="tab-bar">
-    <div class="tab-item" onclick="switchTab('history')">履歴</div>
-    <div class="tab-item" onclick="switchTab('contacts')">連絡先</div>
-    <div class="tab-item active" onclick="switchTab('keypad')">キーパッド</div>
+<div id="tab-keypad" class="tab-content active">
+    <div class="header-info" id="my-num-display"></div>
+    <div class="display-area">
+        <div class="display-number" id="numView"></div>
+        <div style="color:#007aff; cursor:pointer; font-size:14px; margin-top:5px; visibility:hidden;" id="addBtn" onclick="saveContact()">番号を登録</div>
+    </div>
+    <div class="keypad">
+        <div class="key" onclick="press('1')"><div class="num">1</div><div class="abc">&nbsp;</div></div>
+        <div class="key" onclick="press('2')"><div class="num">2</div><div class="abc">ABC</div></div>
+        <div class="key" onclick="press('3')"><div class="num">3</div><div class="abc">DEF</div></div>
+        <div class="key" onclick="press('4')"><div class="num">4</div><div class="abc">GHI</div></div>
+        <div class="key" onclick="press('5')"><div class="num">5</div><div class="abc">JKL</div></div>
+        <div class="key" onclick="press('6')"><div class="num">6</div><div class="abc">MNO</div></div>
+        <div class="key" onclick="press('7')"><div class="num">7</div><div class="abc">PQRS</div></div>
+        <div class="key" onclick="press('8')"><div class="num">8</div><div class="abc">TUV</div></div>
+        <div class="key" onclick="press('9')"><div class="num">9</div><div class="abc">WXYZ</div></div>
+        <div class="key" onclick="press('*')"><div class="num" style="margin-top:10px">*</div><div class="abc">&nbsp;</div></div>
+        <div class="key" onclick="press('0')"><div class="num">0</div><div class="abc">+</div></div>
+        <div class="key" onclick="press('#')"><div class="num">#</div><div class="abc">&nbsp;</div></div>
+    </div>
+    <div class="call-action-area">
+        <button class="main-call-btn" onclick="makeCall()">
+            <svg width="35" height="35" fill="white" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+        </button>
+        <div class="delete-btn" onclick="backspace()">⌫</div>
+    </div>
 </div>
 
-<audio id="dingSound" src="ding.mp3" loop></audio>
+<div class="tab-bar">
+    <div class="tab-item" onclick="alert('履歴はありません')"><div class="tab-icon">🕒</div>履歴</div>
+    <div class="tab-item" onclick="alert('連絡先はありません')"><div class="tab-icon">👤</div>連絡先</div>
+    <div class="tab-item active"><div class="tab-icon">🔢</div>キーパッド</div>
+</div>
+
+<audio id="ringSound" src="ding.mp3" loop></audio>
 <audio id="remoteAudio" autoplay></audio>
 
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
@@ -129,154 +142,126 @@
     const firebaseConfig = { apiKey: "AIzaSyBaMe4Cz_3W75F5NCtioAguONgukg3-k0g", authDomain: "my-call-14d70.firebaseapp.com", projectId: "my-call-14d70", storageBucket: "my-call-14d70.firebasestorage.app", messagingSenderId: "769393584037", appId: "1:769393584037:web:279aa04477f2649230ea4c" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    
-    let MY_NUMBER = "";
-    let pc, timerInterval;
-    const dingSound = document.getElementById('dingSound');
+
+    const MY_NUMBER = localStorage.getItem('my_080_num') || ("080-" + Math.floor(1000+Math.random()*9000) + "-" + Math.floor(1000+Math.random()*9000));
+    localStorage.setItem('my_080_num', MY_NUMBER);
+    document.getElementById('my-num-display').innerText = "自分の番号: " + MY_NUMBER;
+
+    let pc, timer, callTarget;
+    const ringSound = document.getElementById('ringSound');
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-    window.onload = async () => {
-        MY_NUMBER = localStorage.getItem('my_fixed_080_number') || ("080-" + Math.floor(1000+Math.random()*9000) + "-" + Math.floor(1000+Math.random()*9000));
-        localStorage.setItem('my_fixed_080_number', MY_NUMBER);
-        document.getElementById('my-num-info').innerText = "自分の番号: " + MY_NUMBER;
-        
-        const localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        window.localStream = localStream;
-        listenForIncoming();
-    };
-
-    // --- キーパッドロジック ---
-    function press(num) {
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        playTone(num);
-        let current = document.getElementById('numberDisplay').innerText.replace(/-/g, "");
-        if (current.length >= 11) return;
-        current += num;
-        formatDisplay(current);
-    }
-
-    function backspace() {
-        // 音を鳴らさず、表示だけ更新
-        let current = document.getElementById('numberDisplay').innerText.replace(/-/g, "").slice(0, -1);
-        formatDisplay(current);
-    }
-
-    function formatDisplay(raw) {
-        let f = raw;
-        if (raw.length > 3 && raw.length <= 7) f = raw.slice(0,3)+"-"+raw.slice(3);
-        else if (raw.length > 7) f = raw.slice(0,3)+"-"+raw.slice(3,7)+"-"+raw.slice(7);
-        document.getElementById('numberDisplay').innerText = f;
-        document.getElementById('sub-label').innerText = f ? "携帯電話" : "";
-    }
-
-    function playTone(num) {
-        const freqs = {'1':[697,1209],'2':[697,1336],'3':[697,1477],'4':[770,1209],'5':[770,1336],'6':[770,1477],'7':[852,1209],'8':[852,1336],'9':[852,1477],'*':[941,1209],'0':[941,1336],'#':[941,1477]}[num];
-        const osc1 = audioCtx.createOscillator(); const osc2 = audioCtx.createOscillator();
-        const g = audioCtx.createGain(); osc1.frequency.value = freqs[0]; osc2.frequency.value = freqs[1];
+    function playTone(n) {
+        const freqs = {'1':[697,1209],'2':[697,1336],'3':[697,1477],'4':[770,1209],'5':[770,1336],'6':[770,1477],'7':[852,1209],'8':[852,1336],'9':[852,1477],'*':[941,1209],'0':[941,1336],'#':[941,1477]}[n];
+        if(!freqs) return;
+        const o1 = audioCtx.createOscillator(); const o2 = audioCtx.createOscillator();
+        const g = audioCtx.createGain(); o1.frequency.value = freqs[0]; o2.frequency.value = freqs[1];
         g.gain.setValueAtTime(0.1, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime+0.2);
-        osc1.connect(g); osc2.connect(g); g.connect(audioCtx.destination);
-        osc1.start(); osc2.start(); osc1.stop(audioCtx.currentTime+0.2); osc2.stop(audioCtx.currentTime+0.2);
+        o1.connect(g); o2.connect(g); g.connect(audioCtx.destination);
+        o1.start(); o2.start(); o1.stop(audioCtx.currentTime+0.2); o2.stop(audioCtx.currentTime+0.2);
     }
 
-    // --- 通信ロジック ---
-    function listenForIncoming() {
-        db.collection('rooms').doc(MY_NUMBER).onSnapshot(async snap => {
-            const data = snap.data();
-            // 自分の番号のドキュメントに offer があり、まだ接続していない場合に着信画面を出す
-            if (data?.offer && !pc) {
-                showIncomingUI(data.from || "不明な番号");
-            }
-            if (!snap.exists && pc) hangup(false);
-        });
+    function press(n) { if(audioCtx.state === 'suspended') audioCtx.resume(); playTone(n); let v = document.getElementById('numView').innerText.replace(/-/g,""); if(v.length >= 11) return; v += n; updateDisplay(v); }
+    function backspace() { let v = document.getElementById('numView').innerText.replace(/-/g,"").slice(0,-1); updateDisplay(v); }
+    function updateDisplay(v) {
+        let f = v;
+        if(v.length > 3 && v.length <= 7) f = v.slice(0,3)+"-"+v.slice(3);
+        else if(v.length > 7) f = v.slice(0,3)+"-"+v.slice(3,7)+"-"+v.slice(7);
+        document.getElementById('numView').innerText = f;
+        document.getElementById('addBtn').style.visibility = f ? "visible" : "hidden";
     }
 
-    async function call() {
-        const target = document.getElementById('numberDisplay').innerText;
-        if (!target) return;
-        dingSound.play();
-        createPC();
+    // 着信監視 & 相手の切断監視
+    db.collection('rooms').doc(MY_NUMBER).onSnapshot(async snap => {
+        const data = snap.data();
+        // 着信検知
+        if (data?.offer && !pc) {
+            document.getElementById('inc-name').innerText = data.from;
+            document.getElementById('incoming-screen').style.display = 'flex';
+            ringSound.play();
+        }
+        // 通話中に相手がドキュメントを消したら自動終了
+        if (!snap.exists && pc) {
+            console.log("相手が切断しました");
+            hangup(false);
+        }
+    });
+
+    async function makeCall() {
+        const target = document.getElementById('numView').innerText;
+        if(!target || target === MY_NUMBER) return;
+        callTarget = target;
+        ringSound.play();
+        initPC();
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
         await db.collection('rooms').doc(target).set({ offer: { type: offer.type, sdp: offer.sdp }, from: MY_NUMBER });
         
+        // 相手が応答したか監視
         db.collection('rooms').doc(target).onSnapshot(async snap => {
             if (snap.data()?.answer && !pc.currentRemoteDescription) {
-                dingSound.pause();
+                ringSound.pause();
                 await pc.setRemoteDescription(new RTCSessionDescription(snap.data().answer));
-                showInCallUI(target);
+                startInCallUI(target);
             }
+            // 相手が拒否・切断した場合
+            if (!snap.exists && pc) hangup(false);
         });
     }
 
-    function showIncomingUI(num) {
-        document.getElementById('caller-number-display').innerText = num;
-        document.getElementById('incoming-screen').style.display = 'flex';
-        dingSound.play();
+    function initPC() {
+        pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+        pc.ontrack = e => { document.getElementById('remoteAudio').srcObject = e.streams[0]; };
+        navigator.mediaDevices.getUserMedia({audio:true}).then(s => s.getTracks().forEach(t => pc.addTrack(t, s)));
     }
 
-    // スライダーロジック
-    const handle = document.getElementById('sliderHandle');
-    handle.addEventListener('mousedown', startSlide);
-    handle.addEventListener('touchstart', startSlide);
-
-    function startSlide(e) {
-        const startX = e.type === 'mousedown' ? e.pageX : e.touches[0].pageX;
-        const containerWidth = handle.parentElement.offsetWidth - 60;
-        
-        const move = (me) => {
-            let x = (me.type === 'mousemove' ? me.pageX : me.touches[0].pageX) - startX;
-            if (x < 0) x = 0;
-            if (x > containerWidth) x = containerWidth;
-            handle.style.transform = `translateX(${x}px)`;
-            if (x >= containerWidth) {
-                document.removeEventListener('mousemove', move);
-                document.removeEventListener('touchmove', move);
-                acceptCall();
+    // スライダー
+    const knob = document.getElementById('sliderKnob');
+    knob.ontouchstart = knob.onmousedown = (e) => {
+        const startX = e.pageX || e.touches[0].pageX;
+        const trackWidth = knob.parentElement.offsetWidth - knob.offsetWidth - 8;
+        document.onmousemove = document.ontouchmove = (me) => {
+            let x = (me.pageX || me.touches[0].pageX) - startX;
+            x = Math.max(0, Math.min(x, trackWidth));
+            knob.style.left = (x + 4) + 'px';
+            if (x >= trackWidth) {
+                document.onmousemove = document.ontouchmove = null;
+                accept();
             }
         };
-        document.addEventListener('mousemove', move);
-        document.addEventListener('touchmove', move);
-        document.addEventListener('mouseup', () => { handle.style.transform = 'translateX(0)'; document.removeEventListener('mousemove', move); });
-        document.addEventListener('touchend', () => { handle.style.transform = 'translateX(0)'; document.removeEventListener('touchmove', move); });
-    }
+        document.onmouseup = document.ontouchend = () => {
+            if (parseInt(knob.style.left) < trackWidth) knob.style.left = '4px';
+            document.onmousemove = document.ontouchmove = null;
+        };
+    };
 
-    async function acceptCall() {
-        dingSound.pause();
+    async function accept() {
+        ringSound.pause();
         document.getElementById('incoming-screen').style.display = 'none';
         const snap = await db.collection('rooms').doc(MY_NUMBER).get();
-        createPC();
+        initPC();
         await pc.setRemoteDescription(new RTCSessionDescription(snap.data().offer));
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
         await db.collection('rooms').doc(MY_NUMBER).update({ answer: { type: answer.type, sdp: answer.sdp } });
-        showInCallUI(snap.data().from || MY_NUMBER);
+        startInCallUI(snap.data().from);
     }
 
-    function createPC() {
-        pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
-        pc.ontrack = e => { document.getElementById('remoteAudio').srcObject = e.streams[0]; };
-        window.localStream.getTracks().forEach(t => pc.addTrack(t, window.localStream));
-    }
-
-    function showInCallUI(num) {
+    function startInCallUI(name) {
         document.getElementById('incall-screen').style.display = 'flex';
-        document.getElementById('active-call-number').innerText = num;
+        document.getElementById('active-name').innerText = name;
         let s = 0;
-        timerInterval = setInterval(() => {
+        timer = setInterval(() => {
             s++;
-            document.getElementById('call-duration').innerText = `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+            document.getElementById('duration').innerText = `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
         }, 1000);
     }
 
-    function switchTab(name) {
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-item').forEach(i => i.classList.remove('active'));
-        document.getElementById('tab-'+name).classList.add('active');
-        event.currentTarget.classList.add('active');
-    }
-
-    async function hangup(clean = true) {
-        if(clean) await db.collection('rooms').doc(MY_NUMBER).delete();
+    function hangup(clean = true) {
+        if(clean) {
+            db.collection('rooms').doc(MY_NUMBER).delete();
+            if(callTarget) db.collection('rooms').doc(callTarget).delete();
+        }
         location.reload();
     }
 </script>
