@@ -152,6 +152,13 @@
     let answerUnsub = null;
     let iceUnsubs = [];
 
+    // ========== 起動時にマイク許可を取得 ==========
+    try {
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    } catch(e) {
+        alert("マイクの許可が必要です。\nページを再読み込みして許可してください。");
+    }
+
     // ========== UI ==========
     function show(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -192,6 +199,7 @@
 
     // ========== WebRTC ==========
     async function getMic() {
+        if (localStream) return;
         localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
     }
 
