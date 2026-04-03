@@ -95,7 +95,7 @@
         .hangup { width: 72px; height: 72px; background: var(--ios-red); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: 80px; cursor: pointer; }
         
         /* 着信スライダー */
-        .slider { width: 260px; height: 74px; background: rgba(255,255,255,0.2); border-radius: 37px; position: relative; display: flex; align-items: center; margin-top: 200px; overflow: hidden; }
+        .slider { width: 260px; height: 74px; background: rgba(255,255,255,0.2); border-radius: 37px; position: relative; display: flex; align-items: center; margin-top: 300px; overflow: hidden; }
         .slider-text { width: 100%; text-align: center; opacity: 0.8; padding-left: 40px; }
 
         /* マイク許可バナー */
@@ -261,7 +261,16 @@
 </div>
 
 <script>
-    const config = { databaseURL: "https://my-call-14d70-default-rtdb.firebaseio.com" };
+    const config = {
+        apiKey: "AIzaSyBaMe4Cz_3W75F5NCtioAguONgukg3-k0g",
+        authDomain: "my-call-14d70.firebaseapp.com",
+        databaseURL: "https://my-call-14d70-default-rtdb.firebaseio.com",
+        projectId: "my-call-14d70",
+        storageBucket: "my-call-14d70.firebasestorage.app",
+        messagingSenderId: "769393584037",
+        appId: "1:769393584037:web:279aa04477f2649230ea4c",
+        measurementId: "G-EXHXKKRT56"
+    };
     firebase.initializeApp(config);
     const db = firebase.database();
 
