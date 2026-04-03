@@ -3,148 +3,122 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>iPhone 4s Keypad Only</title>
+    <title>iPhone 4s Core</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <style>
-        :root {
-            --ios-blue: #007AFF;
-            --ios-green: #4cd964;
-            --ios-red: #ff3b30;
-        }
+        :root { --ios-blue: #007AFF; --ios-green: #4cd964; --ios-red: #ff3b30; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+        body { background: #fff; height: 100vh; overflow: hidden; display: flex; justify-content: center; cursor: pointer; }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
-        body { background: #fff; height: 100vh; overflow: hidden; display: flex; justify-content: center; }
-
+        /* 中央に凝縮するためのコンテナ */
         #phone-wrapper {
-            width: 100%; max-width: 430px; height: 100vh;
+            width: 100%; max-width: 320px; height: 100vh;
             background: #fff; position: relative; display: flex; flex-direction: column;
         }
 
         /* Status Bar */
-        .status-bar { height: 20px; padding: 0 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
-        .status-left { display: flex; align-items: center; gap: 4px; }
+        .status-bar { height: 25px; padding: 0 12px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+        .status-left { display: flex; align-items: center; gap: 3px; }
         .antenna { display: flex; gap: 2px; align-items: flex-end; }
-        .antenna div { width: 5px; height: 5px; background: #000; border-radius: 50%; }
+        .antenna div { width: 4px; height: 4px; background: #000; border-radius: 50%; }
         .antenna .off { background: #ccc; }
-        .clock { position: absolute; left: 50%; transform: translateX(-50%); font-weight: 600; }
+        .clock { position: absolute; left: 50%; transform: translateX(-50%); font-weight: 700; }
 
         /* Dial View */
-        #number-view { height: 130px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
-        #my-num { font-size: 11px; color: var(--ios-blue); margin-bottom: 8px; }
-        #dial-string { font-size: 44px; font-weight: 200; height: 50px; color: #000; }
-        .backspace { position: absolute; right: 45px; bottom: 40px; cursor: pointer; display: none; }
+        #dial-view { height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 10px; position: relative; }
+        #my-num { font-size: 11px; color: var(--ios-blue); position: absolute; top: 10px; }
+        #dial-string { font-size: 42px; font-weight: 200; height: 50px; }
+        .backspace { position: absolute; right: 10px; bottom: 20px; cursor: pointer; display: none; }
 
-        /* Keypad Grid (Tightened) */
-        .keypad-container { flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; padding-top: 0; }
-        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 32px; }
+        /* Keypad (Condensed) */
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 25px; justify-items: center; padding: 10px; }
         .key {
-            width: 75px; height: 75px; border: 1px solid var(--ios-blue); border-radius: 50%;
+            width: 72px; height: 72px; border: 1.5px solid var(--ios-blue); border-radius: 50%;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            cursor: pointer; transition: background 0.1s;
+            cursor: pointer; transition: 0.1s;
         }
         .key:active { background: rgba(0, 122, 255, 0.2); }
-        .key span { font-size: 38px; font-weight: 200; color: #000; line-height: 1; }
-        .key small { font-size: 10px; color: #000; margin-top: -2px; letter-spacing: 0.5px; }
+        .key span { font-size: 36px; font-weight: 200; color: #000; line-height: 1; }
+        .key small { font-size: 10px; color: #000; margin-top: -3px; }
 
-        .call-btn-area { padding-bottom: 60px; display: flex; justify-content: center; }
-        .call-btn { width: 75px; height: 75px; background: var(--ios-green); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-        
-        /* CSS Icons */
-        .icon-phone-w { width: 30px; height: 30px; background: white; clip-path: polygon(25% 5%, 40% 30%, 30% 40%, 60% 70%, 70% 60%, 95% 75%, 85% 95%, 50% 95%, 5% 50%, 5% 15%); }
+        /* Call Button (Under '0') */
+        .call-area { display: flex; justify-content: center; padding-top: 15px; }
+        .call-btn { width: 72px; height: 72px; background: var(--ios-green); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .icon-phone { width: 30px; height: 30px; background: white; clip-path: polygon(25% 5%, 40% 30%, 30% 40%, 60% 70%, 70% 60%, 95% 75%, 85% 95%, 50% 95%, 5% 50%, 5% 15%); }
 
         /* Call Overlay */
-        .call-overlay {
+        .overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: linear-gradient(180deg, #4a5a6a 0%, #000 100%);
-            z-index: 9999; display: none; flex-direction: column; align-items: center; color: white; padding-top: 60px;
+            z-index: 999; display: none; flex-direction: column; align-items: center; color: white; padding-top: 60px;
         }
-        .hangup-btn { width: 75px; height: 75px; background: var(--ios-red); border-radius: 50%; display: flex; align-items: center; justify-content: center; transform: rotate(135deg); margin-top: 50px; cursor: pointer; }
-
-        /* Tools CSS Icons */
-        .call-tools { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px 45px; margin-top: 40px; }
-        .tool { display: flex; flex-direction: column; align-items: center; font-size: 11px; gap: 8px; }
-        .t-btn { width: 66px; height: 66px; border: 1px solid rgba(255,255,255,0.4); border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; }
-        .t-btn.active { background: white; color: black; }
-
-        /* CSS Drawing for Icons */
-        .i-mute::after { content:''; width:12px; height:18px; border:2px solid currentColor; border-radius:6px; position:absolute; }
-        .i-keypad { display:grid; grid-template-columns: repeat(3, 1fr); gap:3px; }
-        .i-keypad div { width:4px; height:4px; background:currentColor; border-radius:50%; }
-        .i-speaker::after { content:''; width:0; height:0; border-top:8px solid transparent; border-bottom:8px solid transparent; border-right:12px solid currentColor; }
-        .i-plus::before { content:''; width:20px; height:2px; background:currentColor; position:absolute; }
-        .i-plus::after { content:''; width:2px; height:20px; background:currentColor; position:absolute; }
-        .i-facetime { width:20px; height:14px; background:currentColor; border-radius:2px; position:relative; }
-        .i-facetime::after { content:''; position:absolute; right:-8px; top:2px; border-top:5px solid transparent; border-bottom:5px solid transparent; border-left:8px solid currentColor; }
-        .i-contact { width:18px; height:18px; border:2px solid currentColor; border-radius:50%; position:relative; overflow:hidden; }
-        .i-contact::before { content:''; width:6px; height:6px; background:currentColor; border-radius:50%; position:absolute; top:2px; left:4px; }
-        .i-contact::after { content:''; width:14px; height:8px; background:currentColor; border-radius:7px 7px 0 0; position:absolute; bottom:-2px; left:0px; }
+        .call-tools { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px 30px; margin-top: 30px; }
+        .tool { display: flex; flex-direction: column; align-items: center; font-size: 11px; gap: 6px; }
+        .t-btn { width: 62px; height: 62px; border: 1px solid rgba(255,255,255,0.4); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .hangup { width: 72px; height: 72px; background: var(--ios-red); border-radius: 50%; display: flex; align-items: center; justify-content: center; transform: rotate(135deg); margin-top: 50px; cursor: pointer; }
 
         /* Slider */
-        .slide-track { width: 280px; height: 80px; background: rgba(255,255,255,0.15); border-radius: 40px; position: relative; display: flex; align-items: center; margin-top: auto; margin-bottom: 120px; }
+        .slider { width: 260px; height: 80px; background: rgba(255,255,255,0.15); border-radius: 40px; position: relative; display: flex; align-items: center; margin-top: auto; margin-bottom: 80px; overflow: hidden; }
+        .slider-text { width: 100%; text-align: center; font-size: 18px; opacity: 0.6; padding-left: 40px; }
     </style>
 </head>
-<body onclick="forceAudioInit()">
+<body onclick="initAudio()">
 
 <div id="phone-wrapper">
     <div class="status-bar">
-        <div class="status-left">
-            <div class="antenna"><div></div><div></div><div></div><div></div><div class="off"></div></div>
-            <span style="font-weight:600">JDD</span>
-        </div>
-        <div class="clock" id="time">00:00</div>
-        <div></div>
+        <div class="status-left"><div class="antenna"><div></div><div></div><div></div><div></div><div class="off"></div></div><span>JDD</span></div>
+        <div class="clock" id="time">14:34</div>
+        <div style="width:30px"></div>
     </div>
 
-    <div id="number-view">
-        <div id="my-num">読み込み中...</div>
+    <div id="dial-view">
+        <div id="my-num">番号取得中...</div>
         <div id="dial-string"></div>
         <div class="backspace" id="back-btn" onclick="del()">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="#8e8e93"><path d="M22,3H7C6.31,3 5.5,3.5 5.12,4.1L1,12L5.12,19.9C5.5,20.5 6.31,21 7,21H22C23.1,21 24,20.1 24,19V5C24,3.9 23.1,3 22,3M19,15.59L17.59,17L14,13.41L10.41,17L9,15.59L12.59,12L9,8.41L10.41,7L14,10.59L17.59,7L19,8.41L15.41,12L19,15.59Z"/></svg>
         </div>
     </div>
 
-    <div class="keypad-container">
-        <div class="grid">
-            <div class="key" onclick="press('1')"><span>1</span><small>&nbsp;</small></div>
-            <div class="key" onclick="press('2')"><span>2</span><small>ABC</small></div>
-            <div class="key" onclick="press('3')"><span>3</span><small>DEF</small></div>
-            <div class="key" onclick="press('4')"><span>4</span><small>GHI</small></div>
-            <div class="key" onclick="press('5')"><span>5</span><small>JKL</small></div>
-            <div class="key" onclick="press('6')"><span>6</span><small>MNO</small></div>
-            <div class="key" onclick="press('7')"><span>7</span><small>PQRS</small></div>
-            <div class="key" onclick="press('8')"><span>8</span><small>TUV</small></div>
-            <div class="key" onclick="press('9')"><span>9</span><small>WXYZ</small></div>
-            <div class="key" onclick="press('*')"><span>*</span><small>&nbsp;</small></div>
-            <div class="key" onclick="press('0')"><span>0</span><small>+</small></div>
-            <div class="key" onclick="press('#')"><span>#</span><small>&nbsp;</small></div>
-        </div>
+    <div class="grid">
+        <div class="key" onclick="press('1')"><span>1</span><small>&nbsp;</small></div>
+        <div class="key" onclick="press('2')"><span>2</span><small>ABC</small></div>
+        <div class="key" onclick="press('3')"><span>3</span><small>DEF</small></div>
+        <div class="key" onclick="press('4')"><span>4</span><small>GHI</small></div>
+        <div class="key" onclick="press('5')"><span>5</span><small>JKL</small></div>
+        <div class="key" onclick="press('6')"><span>6</span><small>MNO</small></div>
+        <div class="key" onclick="press('7')"><span>7</span><small>PQRS</small></div>
+        <div class="key" onclick="press('8')"><span>8</span><small>TUV</small></div>
+        <div class="key" onclick="press('9')"><span>9</span><small>WXYZ</small></div>
+        <div class="key" onclick="press('*')"><span>*</span><small>&nbsp;</small></div>
+        <div class="key" onclick="press('0')"><span>0</span><small>+</small></div>
+        <div class="key" onclick="press('#')"><span>#</span><small>&nbsp;</small></div>
     </div>
 
-    <div class="call-btn-area">
-        <div class="call-btn" onclick="makeCall()"><div class="icon-phone-w"></div></div>
+    <div class="call-area">
+        <div class="call-btn" onclick="makeCall()"><div class="icon-phone"></div></div>
     </div>
 
-    <div id="call-overlay" class="call-overlay">
-        <h1 id="call-name" style="font-size:38px; font-weight:200">090-0000-0000</h1>
-        <p id="call-status" style="font-size:18px; margin-top:10px;">発信中...</p>
+    <div id="call-ui" class="overlay">
+        <h1 id="call-name" style="font-size:36px; font-weight:200">...</h1>
+        <p id="call-timer" style="font-size:18px; margin-top:8px;">発信中...</p>
         <div class="call-tools">
-            <div class="tool"><div class="t-btn" id="mute-btn" onclick="toggleMute()"><div class="i-mute"></div></div>消音</div>
-            <div class="tool"><div class="t-btn"><div class="i-keypad"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div></div>キーパッド</div>
-            <div class="tool"><div class="t-btn"><div class="i-speaker"></div></div>スピーカー</div>
-            <div class="tool"><div class="t-btn"><div class="i-plus"></div></div>通話を追加</div>
-            <div class="tool"><div class="t-btn"><div class="i-facetime"></div></div>FaceTime</div>
-            <div class="tool"><div class="t-btn"><div class="i-contact"></div></div>連絡先</div>
+            <div class="tool"><div class="t-btn">消音</div>消音</div>
+            <div class="tool"><div class="t-btn">:::</div>キーパッド</div>
+            <div class="tool"><div class="t-btn">スピ</div>スピーカー</div>
+            <div class="tool"><div class="t-btn">＋</div>通話追加</div>
+            <div class="tool"><div class="t-btn">FT</div>FaceTime</div>
+            <div class="tool"><div class="t-btn">人</div>連絡先</div>
         </div>
-        <div class="hangup-btn" onclick="hangup()"><div class="icon-phone-w"></div></div>
+        <div class="hangup" onclick="hangup()"><div class="icon-phone"></div></div>
     </div>
 
-    <div id="inc-overlay" class="call-overlay" style="background: linear-gradient(180deg, #2c3e50 0%, #000 100%);">
-        <h1 id="inc-name" style="font-size:38px; font-weight:200">080-0000-0000</h1>
-        <p style="font-size:18px; margin-top:10px;">JDD 携帯電話</p>
-        <div class="slide-track">
-            <div style="width:100%; text-align:center; font-size:20px; opacity:0.6; padding-left:40px;">スライドで応答</div>
-            <div class="call-btn" id="knob" style="position:absolute; left:5px;"><div class="icon-phone-w"></div></div>
+    <div id="inc-ui" class="overlay" style="background: linear-gradient(180deg, #2c3e50 0%, #000 100%);">
+        <h1 id="inc-name" style="font-size:36px; font-weight:200">...</h1>
+        <p style="font-size:18px; margin-top:8px;">JDD 携帯電話</p>
+        <div class="slider">
+            <div class="slider-text">スライドで応答</div>
+            <div class="call-btn" id="knob" style="position:absolute; left:5px;"><div class="icon-phone"></div></div>
         </div>
     </div>
 </div>
@@ -157,11 +131,11 @@
     firebase.initializeApp(config);
     const db = firebase.database();
 
-    // Audio context for DTMF
     let audioCtx;
     const tones = {'1':[697,1209],'2':[697,1336],'3':[697,1477],'4':[770,1209],'5':[770,1336],'6':[770,1477],'7':[852,1209],'8':[852,1336],'9':[852,1477],'*':[941,1209],'0':[941,1336],'#':[941,1477]};
 
-    function forceAudioInit() {
+    // マイク許可を待たずに音源を有効化
+    function initAudio() {
         if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if(audioCtx.state === 'suspended') audioCtx.resume();
     }
@@ -175,16 +149,11 @@
         o1.start(); o2.start(); setTimeout(() => { o1.stop(); o2.stop(); }, 150);
     }
 
-    // Number Setup
-    let myNum = localStorage.getItem('ios9_phone_final');
-    if(!myNum) {
-        myNum = "090-" + Math.floor(Math.random()*9000+1000) + "-" + Math.floor(Math.random()*9000+1000);
-        localStorage.setItem('ios9_phone_final', myNum);
-    }
+    let myNum = localStorage.getItem('4s_num') || "090-" + Math.floor(Math.random()*9000+1000) + "-" + Math.floor(Math.random()*9000+1000);
+    localStorage.setItem('4s_num', myNum);
     document.getElementById('my-num').innerText = "自分の番号: " + myNum;
     const myId = myNum.replace(/-/g, '');
 
-    // Dialing
     let dial = "";
     function press(n) {
         if(dial.length < 13) {
@@ -200,21 +169,18 @@
         document.getElementById('back-btn').style.display = dial ? 'block' : 'none';
     }
 
-    // Call System
-    let callTimer;
+    let timer;
     function makeCall() {
         if(dial.length < 11) return;
         const target = dial.replace(/-/g, '');
         document.getElementById('snd-ding').play().catch(()=>{});
         db.ref('calls/'+target).set({ from: myNum, status: 'ringing' });
-        
         document.getElementById('call-name').innerText = dial;
-        document.getElementById('call-overlay').style.display = 'flex';
-
+        document.getElementById('call-ui').style.display = 'flex';
         db.ref('calls/'+target).on('value', snap => {
-            const data = snap.val();
-            if(data && data.status === 'connected') startTimer();
-            if(!data) hangup(); 
+            const d = snap.val();
+            if(d && d.status === 'connected') startTimer();
+            if(!d) hangup();
         });
     }
 
@@ -222,44 +188,35 @@
         const target = dial.replace(/-/g, '');
         db.ref('calls/'+target).remove();
         db.ref('calls/'+myId).remove();
-        document.getElementById('call-overlay').style.display = 'none';
-        document.getElementById('inc-overlay').style.display = 'none';
+        document.getElementById('call-ui').style.display = 'none';
+        document.getElementById('inc-ui').style.display = 'none';
         document.getElementById('snd-ring').pause();
-        clearInterval(callTimer);
-        document.getElementById('call-status').innerText = "発信中...";
+        clearInterval(timer);
+        document.getElementById('call-timer').innerText = "発信中...";
     }
 
     function startTimer() {
-        if(callTimer) return;
+        if(timer) return;
         let s = 0;
-        callTimer = setInterval(() => {
+        timer = setInterval(() => {
             s++;
             let m = Math.floor(s/60);
-            document.getElementById('call-status').innerText = (m<10?'0'+m:m)+":"+(s%60<10?'0'+s%60:s%60);
+            document.getElementById('call-timer').innerText = (m<10?'0'+m:m)+":"+(s%60<10?'0'+s%60:s%60);
         }, 1000);
     }
 
-    // Incoming Listener
     db.ref('calls/'+myId).on('value', snap => {
-        const data = snap.val();
-        if(data && data.status === 'ringing') {
-            document.getElementById('inc-name').innerText = data.from;
-            document.getElementById('inc-overlay').style.display = 'flex';
+        const d = snap.val();
+        if(d && d.status === 'ringing') {
+            document.getElementById('inc-name').innerText = d.from;
+            document.getElementById('inc-ui').style.display = 'flex';
             document.getElementById('snd-ring').play().catch(()=>{});
-        } else if(!data) {
-            document.getElementById('inc-overlay').style.display = 'none';
+        } else if(!d) {
+            document.getElementById('inc-ui').style.display = 'none';
             document.getElementById('snd-ring').pause();
         }
     });
 
-    // Mute
-    let isMuted = false;
-    function toggleMute() {
-        isMuted = !isMuted;
-        document.getElementById('mute-btn').classList.toggle('active', isMuted);
-    }
-
-    // Slider
     const knob = document.getElementById('knob');
     let drag = false;
     knob.onmousedown = knob.ontouchstart = () => drag = true;
@@ -267,21 +224,20 @@
         if(!drag) return;
         const rect = knob.parentNode.getBoundingClientRect();
         const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left - 35;
-        if(x > 0 && x < 205) knob.style.left = x + 'px';
-        if(x >= 200) { drag = false; answer(); }
+        if(x > 0 && x < 185) knob.style.left = x + 'px';
+        if(x >= 180) { drag = false; answer(); }
     };
     window.onmouseup = window.ontouchend = () => { drag = false; knob.style.left = '5px'; };
 
     function answer() {
         db.ref('calls/'+myId).update({ status: 'connected' });
-        document.getElementById('inc-overlay').style.display = 'none';
+        document.getElementById('inc-ui').style.display = 'none';
         document.getElementById('snd-ring').pause();
         document.getElementById('call-name').innerText = document.getElementById('inc-name').innerText;
-        document.getElementById('call-overlay').style.display = 'flex';
+        document.getElementById('call-ui').style.display = 'flex';
         startTimer();
     }
 
-    // Clock
     setInterval(() => {
         const d = new Date();
         document.getElementById('time').innerText = d.getHours() + ":" + String(d.getMinutes()).padStart(2, '0');
